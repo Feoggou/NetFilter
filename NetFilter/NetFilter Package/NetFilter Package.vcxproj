@@ -139,7 +139,43 @@
     <VerifyFlags>133563</VerifyFlags>
     <PackageDir>$(OutDir)NetFilter Package</PackageDir>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Vista Debug|Win32'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+    <Midl>
+      <TargetEnvironment>X64</TargetEnvironment>
+    </Midl>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Vista Debug|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Debug|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Vista Release|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Win7 Debug|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Win7 Release|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Release|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
   </ItemDefinitionGroup>
   <ItemGroup>
     <FilesToPackage Include="@(Inf->'%(CopyOutput)')" Condition="'@(Inf)'!=''" />

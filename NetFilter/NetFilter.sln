@@ -25,8 +25,6 @@ Global
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Vista Debug|Win32.ActiveCfg = Vista Debug|Win32
-		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Vista Debug|Win32.Build.0 = Vista Debug|Win32
-		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Vista Debug|Win32.Deploy.0 = Vista Debug|Win32
 		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Vista Debug|x64.ActiveCfg = Vista Debug|x64
 		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Vista Debug|x64.Build.0 = Vista Debug|x64
 		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Vista Debug|x64.Deploy.0 = Vista Debug|x64
@@ -61,8 +59,6 @@ Global
 		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Win8 Release|x64.Build.0 = Win8 Release|x64
 		{48B07DB5-B3F4-427E-B894-6A43D52330B9}.Win8 Release|x64.Deploy.0 = Win8 Release|x64
 		{FA6C0BE1-7E55-4EA9-8CC4-0EBE94426A93}.Vista Debug|Win32.ActiveCfg = Vista Debug|Win32
-		{FA6C0BE1-7E55-4EA9-8CC4-0EBE94426A93}.Vista Debug|Win32.Build.0 = Vista Debug|Win32
-		{FA6C0BE1-7E55-4EA9-8CC4-0EBE94426A93}.Vista Debug|Win32.Deploy.0 = Vista Debug|Win32
 		{FA6C0BE1-7E55-4EA9-8CC4-0EBE94426A93}.Vista Debug|x64.ActiveCfg = Vista Debug|x64
 		{FA6C0BE1-7E55-4EA9-8CC4-0EBE94426A93}.Vista Debug|x64.Build.0 = Vista Debug|x64
 		{FA6C0BE1-7E55-4EA9-8CC4-0EBE94426A93}.Vista Debug|x64.Deploy.0 = Vista Debug|x64

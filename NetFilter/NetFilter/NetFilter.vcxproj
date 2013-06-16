@@ -179,6 +179,8 @@
     </ResourceCompile>
     <Link>
       <AdditionalDependencies>%(AdditionalDependencies);$(DDK_LIB_PATH)\ndis.lib</AdditionalDependencies>
+      <CreateHotPatchableImage Condition="'$(Configuration)|$(Platform)'=='Vista Debug|Win32'">X64Image</CreateHotPatchableImage>
+      <TargetMachine Condition="'$(Configuration)|$(Platform)'=='Vista Debug|Win32'">MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
