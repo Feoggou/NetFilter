@@ -1,6 +1,8 @@
 #include "PipeThread.h"
 #include "Application.h"
+
 #include <cstdlib>
+#include <iostream>
 
 //todo: duplicate string literal... there's also one in Pipes.h
 #define PIPE_SERVER_NAME "\\\\.\\pipe\\HV_NDIS_UniquePipeName"
@@ -26,16 +28,18 @@ bool PipeThread::Connect()
 			/*flags & attrs*/0, /*template */NULL);
 
 		if (m_hPipeConn == INVALID_HANDLE_VALUE) {
-			//TODO: error
+			std::cerr << "could not create pipe: " << GetLastError() << std::endl;
 		}
 
 		DWORD dwError = GetLastError();
 		if (dwError == ERROR_PIPE_BUSY) {
 			if (!WaitNamedPipeA(PIPE_SERVER_NAME, 20000)) {
-				//todo: error
+				std::cerr << "failed while waiting for pipe: " << GetLastError() << std::endl;
 				return false;
 			}
 		}
+
+		Sleep(1000);
 	}
 
 	return true;
@@ -66,7 +70,7 @@ void PipeThread::OnStart()
 		BOOL succeeded  = ReadFile(m_hPipeConn, &value, sizeof(value), &cbRead, /*overlapped*/ NULL);
 
 		if (!succeeded || cbRead != sizeof(value)) {
-			//todo: error
+			std::cerr << "failed reading from pipe: " << GetLastError() << std::endl;
 			return;
 		}
 
