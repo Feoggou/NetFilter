@@ -131,9 +131,9 @@ Global
 		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|Mixed Platforms.Deploy.0 = Release|Win32
 		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|Win32.ActiveCfg = Release|Win32
-		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|Win32.Build.0 = Release|Win32
-		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|Win32.Deploy.0 = Release|Win32
-		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|x64.ActiveCfg = Release|Win32
+		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|x64.ActiveCfg = Release|x64
+		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|x64.Build.0 = Release|x64
+		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Release|x64.Deploy.0 = Release|x64
 		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Win8 Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Win8 Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{03AB5F24-0A18-4E64-8F09-2CDD4FFD4537}.Win8 Debug|Mixed Platforms.Deploy.0 = Debug|Win32
@@ -159,9 +159,9 @@ Global
 		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|Mixed Platforms.Build.0 = Release|Win32
 		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|Mixed Platforms.Deploy.0 = Release|Win32
 		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|Win32.ActiveCfg = Release|Win32
-		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|Win32.Build.0 = Release|Win32
-		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|Win32.Deploy.0 = Release|Win32
-		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|x64.ActiveCfg = Release|Win32
+		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|x64.ActiveCfg = Release|x64
+		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|x64.Build.0 = Release|x64
+		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Release|x64.Deploy.0 = Release|x64
 		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Win8 Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Win8 Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{B4C77643-CB8D-40EA-BF76-AFCECD950C96}.Win8 Debug|Mixed Platforms.Deploy.0 = Debug|Win32
