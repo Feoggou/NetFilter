@@ -25,6 +25,7 @@ ULONG SxExtAllocationTag = 'tPsM';
 ULONG SxExtOidRequestId = 'tPsM';
 
 #include "SendPacketsInfo.h"
+#include "Pipes.h"
 
 
 NDIS_STATUS
@@ -37,6 +38,8 @@ SxExtInitialize()
 VOID
 SxExtUninitialize()
 {
+	uninit_pipe_server();
+
     return;
 }
 
@@ -537,6 +540,8 @@ SxExtStartNetBufferListsIngress(
     )
 {
     UNREFERENCED_PARAMETER(ExtensionContext);
+
+	push_buffers_info_lists_inbound(NetBufferLists);
     
     SxLibSendNetBufferListsIngress(Switch,
                                    NetBufferLists,
@@ -556,6 +561,8 @@ SxExtStartNetBufferListsEgress(
     )
 {
     UNREFERENCED_PARAMETER(ExtensionContext);
+
+	push_buffers_info_lists_outbound(NetBufferLists);
     
     SxLibSendNetBufferListsEgress(Switch,
                                   NetBufferLists,
@@ -574,8 +581,6 @@ SxExtStartCompleteNetBufferListsEgress(
     )
 {
     UNREFERENCED_PARAMETER(ExtensionContext);
-
-	push_buffers_info_lists_outbound(NetBufferLists, 0);
     
     SxLibCompleteNetBufferListsEgress(Switch,
                                       NetBufferLists,
@@ -593,8 +598,6 @@ SxExtStartCompleteNetBufferListsIngress(
     )
 {
     UNREFERENCED_PARAMETER(ExtensionContext);
-
-	push_buffers_info_lists_inbound(NetBufferLists, 0);
     
     SxLibCompleteNetBufferListsIngress(Switch,
                                        NetBufferLists,

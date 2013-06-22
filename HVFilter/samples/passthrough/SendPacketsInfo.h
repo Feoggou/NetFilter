@@ -1,4 +1,6 @@
-#include <ndis.h>
+extern "C" {
+	#include <ndis.h>
 
-void push_buffers_info_lists_send(PNET_BUFFER_LIST NetBufferLists, ULONG NumberOfNetBufferLists);
-void push_buffers_info_lists_receive(PNET_BUFFER_LIST NetBufferLists, ULONG NumberOfNetBufferLists);
+	void push_buffers_info_lists_inbound(PNET_BUFFER_LIST NetBufferLists);
+	void push_buffers_info_lists_outbound(PNET_BUFFER_LIST NetBufferLists);
+}

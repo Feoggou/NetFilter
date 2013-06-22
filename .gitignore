@@ -17,8 +17,8 @@
 *.sdf
 *.opensdf
 *.tlog
+*.log
+*.ilk
 
-VistaDebug
-VistaRelease
-Win8Debug
-Win8Release
+*Debug*
+*Release*
