@@ -151,13 +151,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Pipes\Pipes.h" />
-    <ClInclude Include="..\Thread\Thread.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Pipes\Pipes.cpp" />
-    <ClCompile Include="..\Thread\Thread.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="TestServer.cpp" />
   </ItemGroup>

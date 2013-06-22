@@ -4,6 +4,8 @@
 #include "stdafx.h"
 #include "Pipes.h"
 
+#include <Windows.h>
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	create_pipe_server();
