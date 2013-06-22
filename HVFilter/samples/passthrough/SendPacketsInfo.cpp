@@ -1,4 +1,5 @@
 #include "SendPacketsInfo.h"
+#include "Pipes.h"
 
 ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 {
@@ -17,7 +18,7 @@ ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 	return total_size;
 }
 
-int process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size)
+ULONG process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size)
 {
 	NET_BUFFER_LIST* buffer_list = NetBufferLists;
 	int count = 0;
@@ -38,15 +39,15 @@ int process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size)
 void push_buffers_info_lists_inbound(PNET_BUFFER_LIST NetBufferLists)
 {
 	ULONG total_size = 0;
-	int count = process_buffer_list(NetBufferLists, total_size);
+	ULONG count = process_buffer_list(NetBufferLists, total_size);
 
-	UNREFERENCED_PARAMETER(count);
+	pipe_server_write(count, total_size);
 }
 
 void push_buffers_info_lists_outbound(PNET_BUFFER_LIST NetBufferLists)
 {
 	ULONG total_size = 0;
-	int count = process_buffer_list(NetBufferLists, total_size);
+	ULONG count = process_buffer_list(NetBufferLists, total_size);
 
-	UNREFERENCED_PARAMETER(count);
+	pipe_server_write(count, total_size);
 }
