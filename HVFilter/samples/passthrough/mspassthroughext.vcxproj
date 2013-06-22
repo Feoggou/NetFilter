@@ -109,7 +109,6 @@
   <ItemGroup>
     <ClInclude Exclude="@(ClInclude)" Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd" />
     <ClInclude Include="..\..\Pipes\Pipes.h" />
-    <ClInclude Include="SendPacketsInfo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 </Project>

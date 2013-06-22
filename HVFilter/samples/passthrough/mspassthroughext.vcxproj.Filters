@@ -25,10 +25,10 @@
     <ClCompile Include="precompsrc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SendPacketsInfo.cpp">
+    <ClCompile Include="..\..\Pipes\Pipes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Pipes\Pipes.cpp">
+    <ClCompile Include="SendPacketsInfo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -36,12 +36,13 @@
     <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SendPacketsInfo.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Pipes\Pipes.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SendPacketsInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MsPassthroughExt.rc">
