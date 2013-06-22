@@ -49,5 +49,6 @@ void push_buffers_info_lists_outbound(PNET_BUFFER_LIST NetBufferLists)
 	ULONG total_size = 0;
 	ULONG count = process_buffer_list(NetBufferLists, total_size);
 
-	pipe_server_write(count, total_size);
+	UNREFERENCED_PARAMETER(count);
+	//pipe_server_write(count, total_size);
 }
