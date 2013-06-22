@@ -49,9 +49,6 @@ PipeThread::~PipeThread(void)
 	}
 }
 
-#define LODWORD(l)           ((DWORD)(((ULONGLONG)(l)) & 0xffffffff))
-#define HIDWORD(l)           ((DWORD)((((ULONGLONG)(l)) >> 32) & 0xffffffff))
-
 void PipeThread::OnStart()
 {
 	if (!Connect())

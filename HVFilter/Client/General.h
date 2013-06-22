@@ -5,7 +5,9 @@
 #include <Windows.h>
 #include <windowsx.h>
 #include <Commdlg.h>
-#include <crtdbg.h>
+
+#define LODWORD(l)           ((DWORD)(((ULONGLONG)(l)) & 0xffffffff))
+#define HIDWORD(l)           ((DWORD)((((ULONGLONG)(l)) >> 32) & 0xffffffff))
 
 //warning: more secure versions
 #pragma warning (disable: 4996)
