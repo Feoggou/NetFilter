@@ -2,6 +2,8 @@
 // Copyright (c) Microsoft Corporation. All Rights Reserved.
 //
 
+#pragma once
+
 #include <ndis.h>
 #include <netiodef.h>
 #include <intsafe.h>

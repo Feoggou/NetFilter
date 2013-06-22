@@ -1,6 +1,14 @@
-extern "C" {
-	#include <ndis.h>
+#pragma once
 
-	void push_buffers_info_lists_inbound(PNET_BUFFER_LIST NetBufferLists);
-	void push_buffers_info_lists_outbound(PNET_BUFFER_LIST NetBufferLists);
+#include "precomp.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void push_buffers_info_lists_inbound(PNET_BUFFER_LIST NetBufferLists);
+void push_buffers_info_lists_outbound(PNET_BUFFER_LIST NetBufferLists);
+
+#ifdef __cplusplus
 }
+#endif

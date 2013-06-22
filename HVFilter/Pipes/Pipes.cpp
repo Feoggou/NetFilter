@@ -1,5 +1,7 @@
 #include "Pipes.h"
 
+#include <Windows.h>
+
 const char* PIPE_SERVER_NAME = "\\\\.\\pipe\\HV_NDIS_UniquePipeName";
 
 namespace
