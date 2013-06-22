@@ -16,6 +16,9 @@
 *.suo
 *.sdf
 *.opensdf
+*.tlog
 
 VistaDebug
 VistaRelease
+Win8Debug
+Win8Release

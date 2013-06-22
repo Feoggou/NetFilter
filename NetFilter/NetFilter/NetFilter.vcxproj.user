@@ -3,5 +3,6 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Vista Debug|x64'">
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
     <DbgengKernelMachineName>HV-SERVER</DbgengKernelMachineName>
+    <TestCertificate>CN="WDKTestCert Zenith,130163195187055607" | F7CAF26A05C4CE42FD13CAD223695E558DEF865C</TestCertificate>
   </PropertyGroup>
 </Project>
