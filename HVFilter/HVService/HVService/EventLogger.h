@@ -6,22 +6,8 @@
 class EventLogger
 {
 public:
-	explicit EventLogger(LPCWSTR wsServiceName)
-		: m_wsServiceName(wsServiceName),
-		m_hEventSource(NULL)
-	{
-		_ASSERT(!s_pInst);
-
-		s_pInst = this;
-	}
-
-	~EventLogger()
-	{
-		if (m_hEventSource) {
-			::DeregisterEventSource(m_hEventSource);
-			m_hEventSource = NULL;
-		}
-	}
+	explicit EventLogger(LPCWSTR wsServiceName);
+	~EventLogger();
 
 	void LogEvent(WORD wType, DWORD dwID, LPCWSTR pszS1 = NULL, LPCWSTR pszS2 = NULL, LPCWSTR pszS3 = NULL);
 

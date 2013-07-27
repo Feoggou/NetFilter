@@ -2,6 +2,23 @@
 
 EventLogger* EventLogger::s_pInst = NULL;
 
+EventLogger::EventLogger(LPCWSTR wsServiceName)
+	: m_wsServiceName(wsServiceName),
+	m_hEventSource(NULL)
+{
+	_ASSERT(!s_pInst);
+
+	s_pInst = this;
+}
+
+EventLogger::~EventLogger()
+{
+	if (m_hEventSource) {
+		::DeregisterEventSource(m_hEventSource);
+		m_hEventSource = NULL;
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////
 // Logging functions
 
