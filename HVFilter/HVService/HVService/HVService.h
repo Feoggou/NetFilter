@@ -9,26 +9,28 @@ public:
 	HVService(void);
 	~HVService(void);
 
-	virtual BOOL OnInit();
-    virtual void Run();
-    virtual BOOL OnUserControl(DWORD dwOpcode);
-    virtual void OnDeviceEvent(DWORD dwEventType,LPVOID lpEventData);
+	BOOL OnInit() /*override*/;
+    void Run() /*override*/;
+    BOOL OnUserControl(DWORD dwOpcode) /*override*/;
+    void OnDeviceEvent(DWORD dwEventType,LPVOID lpEventData) /*override*/;
 
     BOOL GetRequest(POSR_COMM_CONTROL_REQUEST PRequest,LPOVERLAPPED POverlapped);
     BOOL SendResponse(POSR_COMM_CONTROL_RESPONSE PResponse,LPOVERLAPPED POverlapped);
     BOOL GetRequestSendResponse(POSR_COMM_CONTROL_REQUEST PRequest,
                                 POSR_COMM_CONTROL_RESPONSE PResponse,
                                 LPOVERLAPPED POverlapped);
+
+private:
     void SaveStatus();
 
     // Control parameters
-    int m_iStartParam;
-    int m_iIncParam;
+    int	m_iStartParam;
+    int	m_iIncParam;
 
     // Current state
-    int m_iState;
+    int	m_iState;
 
-    BOOL    m_Connected;
-    HANDLE  m_OsrControlHandle;
+    BOOL	m_bConnected;
+    HANDLE	m_hOsrControl;
 };
 

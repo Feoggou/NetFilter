@@ -27,7 +27,7 @@ HVService::~HVService(void)
 }
 
 HVService::HVService() :Service(L"HVService", L"Service for HV driver"),
-                                        m_Connected(FALSE),m_OsrControlHandle(INVALID_HANDLE_VALUE)
+                                        m_bConnected(FALSE),m_hOsrControl(INVALID_HANDLE_VALUE)
 {
 	  m_iStartParam = 0;
 	  m_iIncParam = 1;
@@ -37,56 +37,45 @@ HVService::HVService() :Service(L"HVService", L"Service for HV driver"),
 
 BOOL HVService::OnInit()
 {
-	  // Read the registry parameters
-    // Try opening the registry key:
-    // HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\<AppName>\Parameters
-    HKEY hkey;
-	  WCHAR szKey[1024];
-	  wcscpy_s(szKey, L"SYSTEM\\CurrentControlSet\\Services\\");
-	  wcscat_s(szKey, m_szServiceName);
-	  wcscat_s(szKey, L"\\Parameters");
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE,
-                     szKey,
-                     0,
-                     KEY_QUERY_VALUE,
-                     &hkey) == ERROR_SUCCESS) {
-        // Yes we are installed
-        DWORD dwType = 0;
-        DWORD dwSize = sizeof(m_iStartParam);
-        RegQueryValueEx(hkey,
-                        L"Start",
-                        NULL,
-                        &dwType,
-                        (BYTE*)&m_iStartParam,
-                        &dwSize);
-        dwSize = sizeof(m_iIncParam);
-        RegQueryValueEx(hkey,
-                        L"Inc",
-                        NULL,
-                        &dwType,
-                        (BYTE*)&m_iIncParam,
-                        &dwSize);
-        RegCloseKey(hkey);
-    }
+	// Read the registry parameters
+	// Try opening the registry key:
+	// HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\<AppName>\Parameters
+	HKEY hkey;
+	WCHAR szKey[1024];
+	wcscpy_s(szKey, L"SYSTEM\\CurrentControlSet\\Services\\");
+	wcscat_s(szKey, m_szServiceName);
+	wcscat_s(szKey, L"\\Parameters");
 
-	  // Set the initial state
-	  m_iState = m_iStartParam;
+	if (ERROR_SUCCESS == RegOpenKeyEx(HKEY_LOCAL_MACHINE, szKey, 0, KEY_QUERY_VALUE, &hkey))
+	{
+		// Yes we are installed
+		DWORD dwType = 0;
+		DWORD dwSize = sizeof(m_iStartParam);
+		RegQueryValueEx(hkey, L"Start", NULL, &dwType, (BYTE*)&m_iStartParam, &dwSize);
+
+		dwSize = sizeof(m_iIncParam);
+		RegQueryValueEx(hkey, L"Inc", NULL, &dwType, (BYTE*)&m_iIncParam, &dwSize);
+		RegCloseKey(hkey);
+	}
+
+	// Set the initial state
+	m_iState = m_iStartParam;
 
 
-    //
-    // Open up the OSRControl Device.   This will be the device that 
-    // we receive the requests from.
-    //
+	//
+	// Open up the OSRControl Device.   This will be the device that 
+	// we receive the requests from.
+	//
 
-    m_OsrControlHandle = CreateFile(L"\\\\.\\OsrcommControl",GENERIC_READ|GENERIC_WRITE,
-                                    NULL,NULL,OPEN_EXISTING,
-                                    FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL);
+	m_hOsrControl = CreateFile(L"\\\\.\\OsrcommControl",GENERIC_READ|GENERIC_WRITE,
+		NULL,NULL,OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL);
 
-    if(m_OsrControlHandle != INVALID_HANDLE_VALUE) {
+	if(m_hOsrControl != INVALID_HANDLE_VALUE) {
 
-      m_Connected = TRUE;
+		m_bConnected = TRUE;
 
-    }
+	}
 
 	return TRUE;
 }
@@ -98,29 +87,29 @@ void HVService::Run()
     COMMRESPONSE                CommResponse;
     BOOL                        ret;
 
-	m_dbgMsg(L"CReflectorService::Run Entered.");
+	m_dbgMsg(L"HVService::Run Entered.");
 
     //DebugBreak();
 
     while (m_bIsRunning) {
 
         // Sleep for a while
-        m_dbgMsg(L"CReflectorService is sleeping (%lu)...", m_iState);
+        m_dbgMsg(L"HVService is sleeping (%lu)...", m_iState);
         Sleep(1000);
 
-        if(!m_Connected) {
+        if(!m_bConnected) {
 
-            m_OsrControlHandle = CreateFile(L"\\\\.\\OsrcommControl",GENERIC_READ|GENERIC_WRITE,
+            m_hOsrControl = CreateFile(L"\\\\.\\OsrcommControl",GENERIC_READ|GENERIC_WRITE,
                                     NULL,NULL,OPEN_EXISTING,
                                     FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL);
 
-            if(m_OsrControlHandle != INVALID_HANDLE_VALUE) {
+            if(m_hOsrControl != INVALID_HANDLE_VALUE) {
 
-                m_Connected = TRUE;
+                m_bConnected = TRUE;
 
             } else {
 
-                m_dbgMsg(L"CReflectorService Can't Connect to Control (%lu)...", GetLastError());
+                m_dbgMsg(L"HVService Can't Connect to Control (%lu)...", GetLastError());
                 continue;
 
             }
@@ -149,7 +138,7 @@ void HVService::Run()
         CommRequest.CommRequest.RequestBuffer = &CommRequest.CommRequestBuffer[0];
         CommRequest.CommRequest.RequestBufferLength = sizeof(CommRequest.CommRequestBuffer);
 
-        m_dbgMsg(L"CReflectorService: Getting Request: CommRequest RequestBuffer %x, Length %x", 
+        m_dbgMsg(L"HVService: Getting Request: CommRequest RequestBuffer %x, Length %x", 
                  CommRequest.CommRequest.RequestBuffer,
                  CommRequest.CommRequest.RequestBufferLength);
 
@@ -183,14 +172,14 @@ void HVService::Run()
                 //
                 // Process Request.
                 //
-                running = GetOverlappedResult(m_OsrControlHandle,&CommRequestOverlapped,&bytesTransferred,FALSE);
+                running = GetOverlappedResult(m_hOsrControl,&CommRequestOverlapped,&bytesTransferred,FALSE);
                 
                 _ASSERT(running);
 
                 //DebugBreak();
 
-                m_dbgMsg(L"CReflectorService: GetRequest Completed"); 
-                m_dbgMsg(L"CReflectorService: GetRequest Completed: Id= %x, Type = %x, CommRequest RequestBuffer %x, Length %x", 
+                m_dbgMsg(L"HVService: GetRequest Completed"); 
+                m_dbgMsg(L"HVService: GetRequest Completed: Id= %x, Type = %x, CommRequest RequestBuffer %x, Length %x", 
                          CommRequest.CommRequest.RequestID,
                          CommRequest.CommRequest.RequestType,
                          CommRequest.CommRequest.RequestBuffer,
@@ -207,7 +196,7 @@ void HVService::Run()
 
                 ResetEvent(CommRequestOverlapped.hEvent);
                 
-                m_dbgMsg(L"CReflectorService: Sending Response: Id= %x, Type = %x, CommRequest RequestBuffer %x, Length %x", 
+                m_dbgMsg(L"HVService: Sending Response: Id= %x, Type = %x, CommRequest RequestBuffer %x, Length %x", 
                          CommResponse.CommResponse.RequestID,
                          CommResponse.CommResponse.ResponseType,
                          CommResponse.CommResponse.ResponseBuffer,
@@ -240,7 +229,7 @@ void HVService::Run()
 
                     }
 
-                    m_dbgMsg(L"CReflectorService: SendResponse Completed.\n");
+                    m_dbgMsg(L"HVService: SendResponse Completed.\n");
 
                     CloseHandle(CommRequestOverlapped.hEvent);
 
@@ -252,11 +241,11 @@ void HVService::Run()
 
 exitStageLeft:
 
-    if(m_OsrControlHandle != INVALID_HANDLE_VALUE) {
+    if(m_hOsrControl != INVALID_HANDLE_VALUE) {
 
-        CloseHandle(m_OsrControlHandle);
-        m_OsrControlHandle = INVALID_HANDLE_VALUE;
-        m_Connected = FALSE;
+        CloseHandle(m_hOsrControl);
+        m_hOsrControl = INVALID_HANDLE_VALUE;
+        m_bConnected = FALSE;
 
     }
 
@@ -269,11 +258,11 @@ void HVService::OnDeviceEvent(DWORD dwEventType,LPVOID lpEventData)
     switch(dwEventType) {
 
         case DBT_DEVICEARRIVAL:
-            m_dbgMsg(L"CReflectorService::OnDeviceEvent - Arrival %ls",&pBroadcastInterface->dbcc_name[0]);
+            m_dbgMsg(L"HVService::OnDeviceEvent - Arrival %ls",&pBroadcastInterface->dbcc_name[0]);
             break;
 
         case DBT_DEVICEREMOVECOMPLETE:
-            m_dbgMsg(L"CReflectorService::OnDeviceEvent - Removal %ls",&pBroadcastInterface->dbcc_name[0]);
+            m_dbgMsg(L"HVService::OnDeviceEvent - Removal %ls",&pBroadcastInterface->dbcc_name[0]);
             break;
 
         default:
@@ -304,41 +293,32 @@ void HVService::SaveStatus()
     m_dbgMsg(L"Saving current status");
     // Try opening the registry key:
     // HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\<AppName>\...
-    HKEY hkey = NULL;
-	  WCHAR szKey[1024];
-	  wcscpy_s(szKey, L"SYSTEM\\CurrentControlSet\\Services\\");
-	  wcscat_s(szKey, m_szServiceName);
-	  wcscat_s(szKey, L"\\Status");
-    DWORD dwDisp;
-	  DWORD dwErr;
-    m_dbgMsg(L"Creating key: %s", szKey);
-    dwErr = RegCreateKeyEx(	HKEY_LOCAL_MACHINE,
-                           	szKey,
-                   			    0,
-                   			    L"",
-                   			    REG_OPTION_NON_VOLATILE,
-                   			    KEY_WRITE,
-                   			    NULL,
-                   			    &hkey,
-                   			    &dwDisp);
 
-	  if (dwErr != ERROR_SUCCESS) {
-		  m_dbgMsg(L"Failed to create Status key (%lu)", dwErr);
-		  return;
-	  }	
+	HKEY hkey = NULL;
+	WCHAR szKey[1024];
+	wcscpy_s(szKey, L"SYSTEM\\CurrentControlSet\\Services\\");
+	wcscat_s(szKey, m_szServiceName);
+	wcscat_s(szKey, L"\\Status");
 
-      // Set the registry values
-	  m_dbgMsg(L"Saving 'Current' as %ld", m_iState); 
-    RegSetValueEx(hkey,
-                  L"Current",
-                  0,
-                  REG_DWORD,
-                  (BYTE*)&m_iState,
-                  sizeof(m_iState));
+	DWORD dwDisp;
+	DWORD dwErr;
+
+	m_dbgMsg(L"Creating key: %s", szKey);
+	dwErr = RegCreateKeyEx(	HKEY_LOCAL_MACHINE, szKey, 0, L"", REG_OPTION_NON_VOLATILE, KEY_WRITE,
+		NULL, &hkey, &dwDisp);
+
+	if (dwErr != ERROR_SUCCESS) {
+		m_dbgMsg(L"Failed to create Status key (%lu)", dwErr);
+		return;
+	}	
+
+	// Set the registry values
+	m_dbgMsg(L"Saving 'Current' as %ld", m_iState); 
+	RegSetValueEx(hkey, L"Current", 0, REG_DWORD, (BYTE*)&m_iState, sizeof(m_iState));
 
 
-    // Finished with key
-    RegCloseKey(hkey);
+	// Finished with key
+	RegCloseKey(hkey);
 
 }
 
@@ -347,9 +327,9 @@ BOOL HVService::GetRequest(POSR_COMM_CONTROL_REQUEST PRequest,LPOVERLAPPED POver
     BOOL    status;
     DWORD   bytesReturned;
 
-    m_dbgMsg(L"CReflectorService::GetRequest - Entered");
+    m_dbgMsg(L"HVService::GetRequest - Entered");
 
-    status = DeviceIoControl(m_OsrControlHandle,OSR_COMM_CONTROL_GET_REQUEST,
+    status = DeviceIoControl(m_hOsrControl,OSR_COMM_CONTROL_GET_REQUEST,
                              PRequest,sizeof(OSR_COMM_CONTROL_REQUEST),
                              PRequest,sizeof(OSR_COMM_CONTROL_REQUEST),
                              &bytesReturned,
@@ -361,18 +341,18 @@ BOOL HVService::GetRequest(POSR_COMM_CONTROL_REQUEST PRequest,LPOVERLAPPED POver
 
         if(error != ERROR_IO_PENDING) {
 
-            m_dbgMsg(L"CReflectorService::GetRequest - Status %x",GetLastError());
+            m_dbgMsg(L"HVService::GetRequest - Status %x", GetLastError());
             return FALSE;
 
         } else {
 
-            m_dbgMsg(L"CReflectorService::GetRequest Pending");
+            m_dbgMsg(L"HVService::GetRequest Pending");
 
         }
 
     }
 
-    m_dbgMsg(L"CReflectorService::GetRequest - Exit.");
+    m_dbgMsg(L"HVService::GetRequest - Exit.");
 
     return TRUE;                             
 }
@@ -382,11 +362,11 @@ BOOL HVService::SendResponse(POSR_COMM_CONTROL_RESPONSE PResponse,LPOVERLAPPED P
     BOOL    status;
     DWORD   bytesReturned;
 
-    m_dbgMsg(L"CReflectorService::SendResponse - Entered");
+    m_dbgMsg(L"HVService::SendResponse - Entered");
 
-    status = DeviceIoControl(m_OsrControlHandle,OSR_COMM_CONTROL_SEND_RESPONSE,
-                             PResponse,sizeof(OSR_COMM_CONTROL_RESPONSE),
-                             NULL,0,
+    status = DeviceIoControl(m_hOsrControl, OSR_COMM_CONTROL_SEND_RESPONSE,
+                             PResponse, sizeof(OSR_COMM_CONTROL_RESPONSE),
+                             NULL, 0,
                              &bytesReturned,
                              POverlapped);
 
@@ -396,18 +376,18 @@ BOOL HVService::SendResponse(POSR_COMM_CONTROL_RESPONSE PResponse,LPOVERLAPPED P
 
         if(error != ERROR_IO_PENDING) {
 
-            m_dbgMsg(L"CReflectorService::SendResponse - Status %x",GetLastError());
+            m_dbgMsg(L"HVService::SendResponse - Status %x",GetLastError());
             return FALSE;
 
         } else {
 
-            m_dbgMsg(L"CReflectorService::SendResponse Pending");
+            m_dbgMsg(L"HVService::SendResponse Pending");
 
         }
 
     }
 
-    m_dbgMsg(L"CReflectorService::SendResponse - Exit.");
+    m_dbgMsg(L"HVService::SendResponse - Exit.");
 
     return TRUE;                             
 }
@@ -419,9 +399,9 @@ BOOL HVService::GetRequestSendResponse(POSR_COMM_CONTROL_REQUEST PRequest,
     BOOL    status;
     DWORD   bytesReturned;
 
-    m_dbgMsg(L"CReflectorService::GetRequestSendResponse - Entered");
+    m_dbgMsg(L"HVService::GetRequestSendResponse - Entered");
 
-    status = DeviceIoControl(m_OsrControlHandle,OSR_COMM_CONTROL_GET_AND_SEND,
+    status = DeviceIoControl(m_hOsrControl,OSR_COMM_CONTROL_GET_AND_SEND,
                              PResponse,sizeof(OSR_COMM_CONTROL_RESPONSE),
                              PRequest,sizeof(OSR_COMM_CONTROL_REQUEST),
                              &bytesReturned,
@@ -433,17 +413,17 @@ BOOL HVService::GetRequestSendResponse(POSR_COMM_CONTROL_REQUEST PRequest,
 
         if(error != ERROR_IO_PENDING) {
 
-            m_dbgMsg(L"CReflectorService::GetRequestSendResponse - Status %x",GetLastError());
+            m_dbgMsg(L"HVService::GetRequestSendResponse - Status %x",GetLastError());
             return FALSE;
 
         } else {
 
-            m_dbgMsg(L"CReflectorService::GetRequestSendResponse Pending");
+            m_dbgMsg(L"HVService::GetRequestSendResponse Pending");
 
         }
     }
 
-    m_dbgMsg(L"CReflectorService::GetRequestSendResponse - Exit.");
+    m_dbgMsg(L"HVService::GetRequestSendResponse - Exit.");
 
     return TRUE;                             
 }

@@ -75,7 +75,7 @@ BOOL StartHVService(LPWSTR wsServiceName)
     dbgMsg(L"Calling StartServiceCtrlDispatcher()");
     BOOL b = ::StartServiceCtrlDispatcher(st);
     if(!b) {
-        dbgMsg(L"Error starting %x.",GetLastError());
+        dbgMsg(L"Error starting 0x%x.",GetLastError());
     }
     dbgMsg(L"Returned from StartServiceCtrlDispatcher()");
     return b;
@@ -97,7 +97,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		// Didn't find any standard args so start the service
 		// Uncomment the DebugBreak line below to enter the debugger
 		// when the service is started.
-		DebugBreak();
+		
+		//DebugBreak();
 		StartHVService(const_cast<LPWSTR>(service.GetName()));
 	}
 

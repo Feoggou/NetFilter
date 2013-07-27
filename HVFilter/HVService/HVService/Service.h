@@ -53,14 +53,16 @@ protected:
 	DebugMessage	m_dbgMsg;
 
 	// data members
-    WCHAR m_szServiceName[64];
-    WCHAR m_szServiceDescription[256];
-    int m_iMajorVersion;
-    int m_iMinorVersion;
-    SERVICE_STATUS_HANDLE m_hServiceStatus;
-    SERVICE_STATUS m_Status;
-    BOOL m_bIsRunning;
-    BOOL m_bDebugging;
+    WCHAR	m_szServiceName[64];
+    WCHAR	m_szServiceDescription[256];
 
+    int		m_iMajorVersion;
+    int		m_iMinorVersion;
+
+	BOOL	m_bIsRunning;
+    BOOL	m_bDebugging;
+
+    SERVICE_STATUS_HANDLE	m_hServiceStatus;
+    SERVICE_STATUS		m_Status;
 };
 

@@ -1,4 +1,5 @@
 #include "Service.h"
+#include "HVService.h"
 
 #include <cwchar>
 
@@ -15,7 +16,7 @@ Service::Service(const WCHAR* szServiceName,const WCHAR* szServiceDescription)
 {
 	// copy the address of the current object so we can access it from
     // the static member callback functions. 
-    // WARNING: This limits the application to only one CNTService object. 
+    // WARNING: This limits the application to only one Service object. 
     
     // Set the default service name and version
     memset(m_szServiceName,0,sizeof(m_szServiceName));
@@ -40,14 +41,14 @@ Service::Service(const WCHAR* szServiceName,const WCHAR* szServiceDescription)
 
 Service::~Service(void)
 {
-	m_dbgMsg(L"CNTService::~CNTService()");
+	m_dbgMsg(L"Service::~Service()");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 void Service::_ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 {
-	m_dbgMsg(L"Entering CNTService::ServiceMain()");
+	m_dbgMsg(L"Entering Service::ServiceMain()");
     // Register the control request handler
     m_Status.dwCurrentState = SERVICE_START_PENDING;
 
@@ -58,12 +59,12 @@ void Service::_ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 #endif  HANDLEREX
 
     if (m_hServiceStatus == NULL) {
-		m_dbgMsg(L"CNTService::ServiceMain() Service Not Registered");
+		m_dbgMsg(L"Service::ServiceMain() Service Not Registered");
 		EVLOG_ERROR(EVMSG_CTRLHANDLERNOTINSTALLED);
         return;
     }
 
-	  m_dbgMsg(L"CNTService::ServiceMain() Service Registered");
+	  m_dbgMsg(L"Service::ServiceMain() Service Registered");
 
     // Start the initialisation
     if (Initialize()) {
@@ -79,7 +80,7 @@ void Service::_ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 
     // Tell the service manager we are stopped
     SetStatus(SERVICE_STOPPED);
-    m_dbgMsg(L"Leaving CNTService::ServiceMain()");
+    m_dbgMsg(L"Leaving Service::ServiceMain()");
 }
 
 // static member function (callback)
@@ -87,6 +88,10 @@ void Service::ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 {
     // Get a pointer to the C++ object
 	Service* pService = GetService();
+	if (!pService) {
+		pService = new HVService;
+	}
+
 	pService->_ServiceMain(dwArgc, lpszArgv);
 }
 
@@ -95,7 +100,7 @@ void Service::ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 
 void Service::SetStatus(DWORD dwState)
 {
-    m_dbgMsg(L"CNTService::SetStatus(%lu, %lu)", m_hServiceStatus, dwState);
+    m_dbgMsg(L"Service::SetStatus(%lu, %lu)", m_hServiceStatus, dwState);
     m_Status.dwCurrentState = dwState;
     ::SetServiceStatus(m_hServiceStatus, &m_Status);
 }
@@ -105,7 +110,7 @@ void Service::SetStatus(DWORD dwState)
 
 BOOL Service::Initialize()
 {
-    m_dbgMsg(L"Entering CNTService::Initialize()");
+    m_dbgMsg(L"Entering Service::Initialize()");
 
     // Start the initialization
     SetStatus(SERVICE_START_PENDING);
@@ -126,7 +131,7 @@ BOOL Service::Initialize()
     EVLOG_INFO(EVMSG_STARTED);
     SetStatus(SERVICE_RUNNING);
 
-    m_dbgMsg(L"Leaving CNTService::Initialize()");
+    m_dbgMsg(L"Leaving Service::Initialize()");
     return TRUE;
 }
 
@@ -137,7 +142,7 @@ BOOL Service::Initialize()
 // When this function returns the service has stopped.
 void Service::Run()
 {
-    m_dbgMsg(L"Entering CNTService::Run()");
+    m_dbgMsg(L"Entering Service::Run()");
 
     while (m_bIsRunning) {
         m_dbgMsg(L"Sleeping...");
@@ -145,7 +150,7 @@ void Service::Run()
     }
 
     // nothing more to do
-    m_dbgMsg(L"Leaving CNTService::Run()");
+    m_dbgMsg(L"Leaving Service::Run()");
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +161,7 @@ void Service::Run()
 
 DWORD Service::_HandlerEx(DWORD dwOpcode,DWORD dwEventType,LPVOID lpEventData,LPVOID lpContext)
 {
-	m_dbgMsg(L"CNTService::Handler(%lu)", dwOpcode);
+	m_dbgMsg(L"Service::Handler(%lu)", dwOpcode);
     switch (dwOpcode) {
     case SERVICE_CONTROL_STOP: // 1
         SetStatus(SERVICE_STOP_PENDING);
@@ -220,48 +225,48 @@ DWORD Service::HandlerEx(DWORD dwOpcode,DWORD dwEventType,LPVOID lpEventData,LPV
 // Called when the service is first initialized
 BOOL Service::OnInit()
 {
-    m_dbgMsg(L"CNTService::OnInit()");
+    m_dbgMsg(L"Service::OnInit()");
 	  return TRUE;
 }
 
 // Called when the service control manager wants to stop the service
 void Service::OnStop()
 {
-    m_dbgMsg(L"CNTService::OnStop()");
+    m_dbgMsg(L"Service::OnStop()");
 }
 
 // called when the service is interrogated
 void Service::OnInterrogate()
 {
-    m_dbgMsg(L"CNTService::OnInterrogate()");
+    m_dbgMsg(L"Service::OnInterrogate()");
 }
 
 // called when the service is paused
 void Service::OnPause()
 {
-    m_dbgMsg(L"CNTService::OnPause()");
+    m_dbgMsg(L"Service::OnPause()");
 }
 
 // called when the service is continued
 void Service::OnContinue()
 {
-    m_dbgMsg(L"CNTService::OnContinue()");
+    m_dbgMsg(L"Service::OnContinue()");
 }
 
 // called when the service is shut down
 void Service::OnShutdown()
 {
-    m_dbgMsg(L"CNTService::OnShutdown()");
+    m_dbgMsg(L"Service::OnShutdown()");
 }
 
 void Service::OnDeviceEvent(DWORD dwEventType,LPVOID lpEventData)
 {
-    m_dbgMsg(L"CNTService::OnDeviceEvent(DWORD dwEventType,LPVOID lpEventData)");
+    m_dbgMsg(L"Service::OnDeviceEvent(DWORD dwEventType,LPVOID lpEventData)");
 }
 
 // called when the service gets a user control message
 BOOL Service::OnUserControl(DWORD dwOpcode)
 {
-    m_dbgMsg(L"CNTService::OnUserControl(%8.8lXH)", dwOpcode);
+    m_dbgMsg(L"Service::OnUserControl(%8.8lXH)", dwOpcode);
     return FALSE; // say not handled
 }
