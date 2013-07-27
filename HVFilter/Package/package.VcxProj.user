@@ -3,5 +3,33 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Release|x64'">
     <SignMode>TestSign</SignMode>
     <TestCertificate>CN="WDKTestCert Zenith,130163954613505035" | 1655490B487803B5E40F8410AD6689BF13A5109C</TestCertificate>
+    <DbgengKernelMachineName>LAPTOP-HVS</DbgengKernelMachineName>
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <EnableDeployment>True</EnableDeployment>
+    <RemoveDriver>False</RemoveDriver>
+    <InstallMode>DriverTest</InstallMode>
+    <HardwareIdString />
+    <CommandLine />
+    <ScriptPath>C:\Program Files (x86)\Windows Kits\8.0\Testing\Tests\DefaultDriverPackageInstallationTask\DefaultDriverPackageInstallationTask.dll</ScriptPath>
+    <DbgengRemoteMachineName>LAPTOP-HVS</DbgengRemoteMachineName>
+    <DeployFiles />
+    <ScriptName>Microsoft.DriverKit.DefaultDriverPackageInstallationClass.PerformDefaultDriverPackageInstallation</ScriptName>
+    <ScriptDeviceQuery>%PathToInf%</ScriptDeviceQuery>
+    <DebugDeployment>True</DebugDeployment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Debug|x64'">
+    <DbgengKernelMachineName>LAPTOP-HVS</DbgengKernelMachineName>
+    <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
+    <EnableDeployment>False</EnableDeployment>
+    <RemoveDriver>False</RemoveDriver>
+    <InstallMode>None</InstallMode>
+    <HardwareIdString />
+    <CommandLine />
+    <ScriptPath>C:\Program Files (x86)\Windows Kits\8.0\Testing\Tests\DefaultDriverPackageInstallationTask\DefaultDriverPackageInstallationTask.dll</ScriptPath>
+    <DbgengRemoteMachineName>LAPTOP-HVS</DbgengRemoteMachineName>
+    <DeployFiles />
+    <ScriptName>Microsoft.DriverKit.DefaultDriverPackageInstallationClass.PerformDefaultDriverPackageInstallation</ScriptName>
+    <ScriptDeviceQuery>%PathToInf%</ScriptDeviceQuery>
+    <DebugDeployment>False</DebugDeployment>
   </PropertyGroup>
 </Project>

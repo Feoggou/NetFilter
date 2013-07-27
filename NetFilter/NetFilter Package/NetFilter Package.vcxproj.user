@@ -31,6 +31,6 @@
     <ScriptDeviceQuery />
     <DebugDeployment>False</DebugDeployment>
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <TestCertificate>CN="WDKTestCert Zenith,130163195096978299" | 91BC1EC78DB61AA9C060EE975E14121BE3E02887</TestCertificate>
+    <TestCertificate>CN="WDKTestCert Zenith,130185566540459745" | 617C852DCA25FA2FBA4C3FC35BB6AC9E944A8FA8</TestCertificate>
   </PropertyGroup>
 </Project>

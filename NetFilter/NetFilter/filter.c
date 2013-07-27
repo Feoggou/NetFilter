@@ -148,8 +148,8 @@ Return Value:
             DEBUGP(DL_WARN, "Register filter driver failed.\n");
             break;
         }
-
-        Status = NetFilterRegisterDevice();
+		Status = 1;
+        /*Status = NetFilterRegisterDevice();
 
         if (Status != NDIS_STATUS_SUCCESS)
         {
@@ -157,7 +157,7 @@ Return Value:
             FILTER_FREE_LOCK(&FilterListLock);
             DEBUGP(DL_WARN, "Register device for the filter driver failed.\n");
             break;
-        }
+        }*/
 
 
     }

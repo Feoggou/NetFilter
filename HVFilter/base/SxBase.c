@@ -87,6 +87,7 @@ DriverEntry(
     fChars.UniqueName = SxExtensionGuid;
     fChars.ServiceName = serviceName;
     
+	/******************** HANDLERS ******************/
     fChars.SetOptionsHandler = SxNdisSetOptions;
     fChars.SetFilterModuleOptionsHandler = SxNdisSetFilterModuleOptions;
     
