@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Windows.h>
-
 typedef struct _OSR_COMM_CONTROL_REQUEST {
   //
   // The request ID is used to match up the response to the original request
@@ -28,6 +26,11 @@ typedef struct _OSR_COMM_CONTROL_REQUEST {
 
 } OSR_COMM_CONTROL_REQUEST, *POSR_COMM_CONTROL_REQUEST;
 
+#define OSR_COMM_READ_REQUEST 0x10
+#define OSR_COMM_WRITE_REQUEST 0x20
+
+/************************ response ******************************/
+
 typedef struct _OSR_COMM_CONTROL_RESPONSE {
   //
   // The request ID is used to match up this response to the original request
@@ -49,3 +52,6 @@ typedef struct _OSR_COMM_CONTROL_RESPONSE {
   ULONG ResponseBufferLength;
 
 } OSR_COMM_CONTROL_RESPONSE, *POSR_COMM_CONTROL_RESPONSE;
+
+#define OSR_COMM_READ_RESPONSE 0x10
+#define OSR_COMM_WRITE_RESPONSE 0x20

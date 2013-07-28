@@ -17,6 +17,9 @@ Abstract:
 --*/
 
 #include "precomp.h"
+#include "DeviceInfo.h"
+#include "DeviceOp.h"
+#include "../HVService/HVService/Stuff.h"
 
 ULONG SxDebugLevel;
 NDIS_HANDLE SxDriverHandle = NULL;
@@ -119,6 +122,14 @@ DriverEntry(
                                        &fChars,
                                        &SxDriverHandle);
 
+	if (status != NDIS_STATUS_SUCCESS) {
+		goto Cleanup;
+	}
+
+	/*********** add here device for communication with the net service ------ ***********/
+	status = InitializeDevice(DriverObject, RegistryPath);
+	/*********** ------  device for communication with the net service ***********/
+
 Cleanup:
 
     if (status != NDIS_STATUS_SUCCESS)
@@ -135,6 +146,503 @@ Cleanup:
     }
 
     return status;
+}
+
+PDEVICE_OBJECT OsrCommDeviceObject;
+PDEVICE_OBJECT OsrDataDeviceObject;
+
+LONG OsrRequestID = 0xFFFFFFFE; // checks for "roll-over" problems
+
+NTSTATUS InitializeDevice(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryPath)
+{
+	USHORT index;
+	UNICODE_STRING driverName;
+	UNICODE_STRING deviceName;
+	NTSTATUS status;
+	UNICODE_STRING tempString;
+
+	POSR_COMM_CONTROL_DEVICE_EXTENSION controlExt;
+	POSR_COMM_DATA_DEVICE_EXTENSION dataExt;
+	
+	index = RegistryPath->Length / sizeof(WCHAR);
+
+	do {
+		index--;
+
+	} while (index && (RegistryPath->Buffer[index] !=  OBJ_NAME_PATH_SEPARATOR));
+
+	//
+	// This entry should point to the slash before the last component of the name
+	//
+	if (RegistryPath->Buffer[index] == OBJ_NAME_PATH_SEPARATOR) {
+
+		index++;
+
+	}
+
+	//
+	// Now we know the length of the string
+	//
+	driverName.Length = RegistryPath->Length - (index * sizeof(WCHAR));
+
+	//
+	// Allocate enough for the NULL at the end...
+	//
+	driverName.MaximumLength = driverName.Length + sizeof(WCHAR);
+
+	//
+	// Allocate storage for the driver name: (name + NULL) * 2
+	//
+	driverName.Buffer = (PWCHAR) ExAllocatePoolWithTag(PagedPool, driverName.MaximumLength, 'ndCO');
+
+	if (NULL == driverName.Buffer) {
+
+		//
+		// Allocation failed
+		//
+		return STATUS_INSUFFICIENT_RESOURCES;
+
+	}
+
+	RtlZeroMemory(driverName.Buffer, driverName.MaximumLength);
+
+	RtlCopyMemory(driverName.Buffer, &RegistryPath->Buffer[index], driverName.Length);
+
+	//
+	// OK.  Now let's create a device name; we have the middle and we need a
+	// prefix and a suffix.
+	//
+	deviceName.MaximumLength = driverName.MaximumLength +
+		sizeof(OSR_COMM_CONTROL_DEVICE_NAME_PREFIX) +
+		sizeof(OSR_COMM_CONTROL_DEVICE_NAME_SUFFIX);
+
+	deviceName.Buffer = (PWSTR) ExAllocatePoolWithTag(PagedPool, deviceName.MaximumLength, 'NDFF');
+
+	if (NULL == deviceName.Buffer) {
+
+		//
+		// Allocation failed
+		//
+		ExFreePool(driverName.Buffer);
+
+		return STATUS_INSUFFICIENT_RESOURCES;
+
+	}
+
+	//
+	// Build the control object name - do not include the trailing null size in this
+	// computation.
+	//
+	deviceName.Length = sizeof(OSR_COMM_CONTROL_DEVICE_NAME_PREFIX) - sizeof(WCHAR);
+
+	RtlCopyMemory(deviceName.Buffer, OSR_COMM_CONTROL_DEVICE_NAME_PREFIX, deviceName.Length);
+
+	status = RtlAppendUnicodeStringToString(&deviceName, &driverName);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Append failed.
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		return status;
+
+	}
+
+	RtlInitUnicodeString(&tempString, OSR_COMM_CONTROL_DEVICE_NAME_SUFFIX);
+
+	status = RtlAppendUnicodeStringToString(&deviceName, &tempString);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Append failed.
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		return status;
+
+	}
+
+	DbgPrint("Create device %wZ\n", &deviceName);
+
+	//
+	// Now we can create the control device object
+	//
+	status = IoCreateDevice(DriverObject,
+		sizeof(OSR_COMM_CONTROL_DEVICE_EXTENSION),
+		&deviceName,
+		OSR_COMM_CONTROL_TYPE,
+		FILE_DEVICE_SECURE_OPEN, // characteristics
+		TRUE, // exclusive - only one control process
+		&OsrCommDeviceObject);
+
+	//
+	// Did the create device work?
+	//
+	if (!NT_SUCCESS(status)) {
+		//
+		// The inevitable clean-up
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		return status;
+
+	}
+
+	//
+	// Set up the device extension
+	//
+	controlExt = (POSR_COMM_CONTROL_DEVICE_EXTENSION) OsrCommDeviceObject->DeviceExtension;
+
+	controlExt->MagicNumber = OSR_COMM_CONTROL_EXTENSION_MAGIC_NUMBER;
+
+	controlExt->DriverName = driverName;
+
+	InitializeListHead(&controlExt->ServiceQueue);
+
+	ExInitializeFastMutex(&controlExt->ServiceQueueLock);
+
+	InitializeListHead(&controlExt->RequestQueue);
+
+	ExInitializeFastMutex(&controlExt->RequestQueueLock);
+
+
+	//
+	// Now, store away the registry path for future use
+	//
+	controlExt->RegistryPath.Buffer = (PWSTR) ExAllocatePoolWithTag(PagedPool,
+		RegistryPath->Length + sizeof(WCHAR),
+		'prCO');
+
+	if (NULL == controlExt->RegistryPath.Buffer) {
+
+		//
+		// Allocation failed
+		//
+		IoDeleteDevice(OsrCommDeviceObject);
+
+		ExFreePool(driverName.Buffer);
+		ExFreePool(deviceName.Buffer);
+
+		return STATUS_INSUFFICIENT_RESOURCES;
+
+	}
+
+	controlExt->RegistryPath.MaximumLength = RegistryPath->Length + sizeof(WCHAR);
+
+	RtlCopyUnicodeString(&controlExt->RegistryPath, RegistryPath);
+
+	//
+	// We need to make the control object visible to Win32
+	//
+	controlExt->SymbolicLinkName.MaximumLength = driverName.MaximumLength +
+		sizeof(OSR_COMM_DOSDEVICE_PATH) +
+		sizeof(OSR_COMM_CONTROL_DEVICE_NAME_SUFFIX);
+
+
+	controlExt->SymbolicLinkName.Buffer =
+		(PWSTR) ExAllocatePoolWithTag(PagedPool,
+		controlExt->SymbolicLinkName.MaximumLength,
+		'lSCO');
+
+	if (NULL == controlExt->SymbolicLinkName.Buffer) {
+
+		//
+		// Allocation failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(deviceName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+	}
+
+	//
+	// Build the symlink name up
+	//
+	controlExt->SymbolicLinkName.Length = sizeof(OSR_COMM_DOSDEVICE_PATH) - sizeof(WCHAR);
+
+	RtlCopyMemory(controlExt->SymbolicLinkName.Buffer,
+		OSR_COMM_DOSDEVICE_PATH,
+		controlExt->SymbolicLinkName.Length);
+
+	status = RtlAppendUnicodeStringToString(&controlExt->SymbolicLinkName, &driverName);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Append failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	RtlInitUnicodeString(&tempString, OSR_COMM_CONTROL_DEVICE_NAME_SUFFIX);
+
+	status = RtlAppendUnicodeStringToString(&controlExt->SymbolicLinkName, &tempString);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Append failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	//
+	// Now we can create the symbolic link
+	//
+	status = IoCreateSymbolicLink(&controlExt->SymbolicLinkName, &deviceName);
+
+	//
+	// No matter what, we're done with the device name
+	//
+	ExFreePool(deviceName.Buffer);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// The symbolic link creation failed.
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	//
+	// Now let's create the data device object
+	//
+	deviceName.MaximumLength = driverName.MaximumLength +
+		sizeof(OSR_COMM_DATA_DEVICE_NAME_PREFIX) +
+		sizeof(OSR_COMM_DATA_DEVICE_NAME_SUFFIX);
+
+	deviceName.Buffer = (PWSTR) ExAllocatePoolWithTag(PagedPool, deviceName.MaximumLength, 'NDCO');
+
+	if (NULL == deviceName.Buffer) {
+
+		//
+		// Allocation failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	deviceName.Length = sizeof(OSR_COMM_DATA_DEVICE_NAME_PREFIX) - sizeof(WCHAR);
+
+	RtlCopyMemory(deviceName.Buffer, OSR_COMM_DATA_DEVICE_NAME_PREFIX, deviceName.Length);
+
+	status = RtlAppendUnicodeStringToString(&deviceName, &driverName);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Clean up, return error
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	//
+	// Append the suffix
+	//
+	RtlInitUnicodeString(&tempString, OSR_COMM_DATA_DEVICE_NAME_SUFFIX);
+
+	status = RtlAppendUnicodeStringToString(&deviceName, &tempString);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Clean up, return error
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+	}
+
+	DbgPrint("Create device %wZ\n", &deviceName);
+
+	/************************************* create data device ***********************************************/
+	//
+	// Create the data device object
+	//
+	status = IoCreateDevice(DriverObject,
+		sizeof(OSR_COMM_DATA_DEVICE_EXTENSION),
+		&deviceName,
+		OSR_COMM_DATA_TYPE,
+		FILE_DEVICE_SECURE_OPEN,
+		FALSE,
+		&OsrDataDeviceObject);
+
+	//
+	// Did the create device work?
+	//
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Cleanup, bail out
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	//
+	// Note that this device uses DIRECT I/O
+	//
+	OsrDataDeviceObject->Flags |= DO_DIRECT_IO;
+
+	//
+	// Set up the data device extension
+	//
+	dataExt = (POSR_COMM_DATA_DEVICE_EXTENSION) OsrDataDeviceObject->DeviceExtension;
+
+	dataExt->MagicNumber = OSR_COMM_DATA_DEVICE_EXTENSION_MAGIC_NUMBER;
+	InitializeListHead(&dataExt->ReadRequestQueue);
+	ExInitializeFastMutex(&dataExt->ReadRequestQueueLock);
+	InitializeListHead(&dataExt->WriteRequestQueue);
+	ExInitializeFastMutex(&dataExt->WriteRequestQueueLock);
+
+	//
+	// Create a symbolic link so the driver is visible to Win32 applications
+	//
+	dataExt->SymbolicLinkName.MaximumLength = driverName.MaximumLength + 
+		sizeof(OSR_COMM_DOSDEVICE_PATH) +
+		sizeof(OSR_COMM_DATA_DEVICE_NAME_SUFFIX);
+
+	dataExt->SymbolicLinkName.Buffer =
+		(PWSTR) ExAllocatePoolWithTag(PagedPool,
+		dataExt->SymbolicLinkName.MaximumLength,
+		'LSCO');
+
+	if (NULL == dataExt->SymbolicLinkName.Buffer) {
+
+		//
+		// Allocation failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return STATUS_INSUFFICIENT_RESOURCES;
+
+	}
+
+	//
+	// Build the symlink
+	//
+	dataExt->SymbolicLinkName.Length = sizeof(OSR_COMM_DOSDEVICE_PATH) - sizeof(WCHAR);
+
+	RtlCopyMemory(dataExt->SymbolicLinkName.Buffer,
+		OSR_COMM_DOSDEVICE_PATH,
+		dataExt->SymbolicLinkName.Length);
+
+	status = RtlAppendUnicodeStringToString(&dataExt->SymbolicLinkName, &driverName);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Append failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	RtlInitUnicodeString(&tempString, OSR_COMM_DATA_DEVICE_NAME_SUFFIX);
+
+	status = RtlAppendUnicodeStringToString(&dataExt->SymbolicLinkName, &tempString);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// Append failed
+		//
+		ExFreePool(deviceName.Buffer);
+		ExFreePool(driverName.Buffer);
+
+		SxNdisUnload(DriverObject);
+
+		return status;
+	}
+
+	//
+	// Now we can create the symbolic link
+	//
+	status = IoCreateSymbolicLink(&dataExt->SymbolicLinkName,
+		&deviceName);
+
+	//
+	// No matter what, we don't need the device name anymore
+	//
+	ExFreePool(deviceName.Buffer);
+	ExFreePool(driverName.Buffer);
+
+	if (!NT_SUCCESS(status)) {
+
+		//
+		// The symbolic link creation failed.
+		//
+		SxNdisUnload(DriverObject);
+
+		return status;
+
+	}
+
+	//
+	// Now, set up entry points
+	//
+
+	DriverObject->MajorFunction[IRP_MJ_CREATE] = OsrCommCreate;
+	DriverObject->MajorFunction[IRP_MJ_CLEANUP] = OsrCommCleanup;
+	DriverObject->MajorFunction[IRP_MJ_CLOSE] = OsrCommClose;
+	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = OsrCommDeviceControl;
+	DriverObject->MajorFunction[IRP_MJ_READ] = 
+		DriverObject->MajorFunction[IRP_MJ_WRITE] = OsrCommReadWrite;
+
+
+	//
+	// We are done at this point
+	//
+	return STATUS_SUCCESS;
 }
 
 

@@ -18,4 +18,50 @@
       <UniqueIdentifier>{95E9616B-E1B4-43B7-BD7D-3C2EA2E76BBD}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="precompsrc.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SxBase.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SxLibrary.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DeviceOp.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SxApi.h" />
+    <ClInclude Include="SxBase.h" />
+    <ClInclude Include="SxLibrary.h" />
+    <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SxApi.h" />
+    <ClInclude Include="SxBase.h" />
+    <ClInclude Include="SxLibrary.h" />
+    <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SxApi.h" />
+    <ClInclude Include="SxBase.h" />
+    <ClInclude Include="SxLibrary.h" />
+    <ClInclude Include="precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SxApi.h" />
+    <ClInclude Include="SxBase.h" />
+    <ClInclude Include="SxLibrary.h" />
+    <ClInclude Include="DeviceInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DeviceOp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
