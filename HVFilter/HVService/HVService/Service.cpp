@@ -86,6 +86,8 @@ void Service::_ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 // static member function (callback)
 void Service::ServiceMain(DWORD dwArgc, LPTSTR* lpszArgv)
 {
+	Sleep(10000);
+
     // Get a pointer to the C++ object
 	Service* pService = GetService();
 	if (!pService) {
