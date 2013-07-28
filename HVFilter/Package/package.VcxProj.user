@@ -15,7 +15,7 @@
     <DeployFiles />
     <ScriptName>Microsoft.DriverKit.DefaultDriverPackageInstallationClass.PerformDefaultDriverPackageInstallation</ScriptName>
     <ScriptDeviceQuery>%PathToInf%</ScriptDeviceQuery>
-    <DebugDeployment>True</DebugDeployment>
+    <DebugDeployment>False</DebugDeployment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Debug|x64'">
     <DbgengKernelMachineName>LAPTOP-HVS</DbgengKernelMachineName>

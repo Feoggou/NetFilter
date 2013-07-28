@@ -267,6 +267,9 @@ NTSTATUS InitializeDevice(PDRIVER_OBJECT DriverObject, PUNICODE_STRING RegistryP
 
 	}
 
+	/****************************** creating the control device here ****************************/
+
+	//device name = \Device\OSRMSPassthroughExtControl
 	DbgPrint("Create device %wZ\n", &deviceName);
 
 	//

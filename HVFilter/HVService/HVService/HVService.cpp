@@ -67,7 +67,7 @@ BOOL HVService::OnInit()
 	// we receive the requests from.
 	//
 
-	m_hOsrControl = CreateFile(L"\\\\.\\OsrcommControl",GENERIC_READ|GENERIC_WRITE,
+	m_hOsrControl = CreateFile(L"\\\\.\\OSRMSPassthroughExtControl",GENERIC_READ|GENERIC_WRITE,
 		NULL,NULL,OPEN_EXISTING,
 		FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL);
 
@@ -99,7 +99,7 @@ void HVService::Run()
 
         if(!m_bConnected) {
 
-            m_hOsrControl = CreateFile(L"\\\\.\\OsrcommControl",GENERIC_READ|GENERIC_WRITE,
+            m_hOsrControl = CreateFile(L"\\\\.\\OSRMSPassthroughExtControl",GENERIC_READ|GENERIC_WRITE,
                                     NULL,NULL,OPEN_EXISTING,
                                     FILE_ATTRIBUTE_NORMAL|FILE_FLAG_OVERLAPPED,NULL);
 
