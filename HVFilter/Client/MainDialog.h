@@ -3,7 +3,7 @@
 #include "resource.h"
 
 #include "Dialog.h"
-#include "PipeThread.h"
+#include "DataDeviceThread.h"
 
 #include <string>
 
@@ -37,5 +37,5 @@ private:
 	HWND	m_hPackageCountEdit;
 	HWND	m_hPackageSizeEdit;
 
-	PipeThread			m_pipeThread;
+	DataDeviceThread			m_dataDeviceThread;
 };

@@ -26,6 +26,6 @@ void MainDialog::OnInitDialog()
 	m_hPackageCountEdit = GetDlgItem(m_hWnd, IDC_PACKETS_COUNT);
 	m_hPackageSizeEdit = GetDlgItem(m_hWnd, IDC_PACKETS_SIZE);
 
-	m_pipeThread.SetControls(m_hPackageCountEdit, m_hPackageSizeEdit);
-	m_pipeThread.Start();
+	m_dataDeviceThread.SetControls(m_hPackageCountEdit, m_hPackageSizeEdit);
+	m_dataDeviceThread.Start();
 }

@@ -142,6 +142,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="DataDeviceThread.cpp" />
     <ClCompile Include="Dialog.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MainDialog.cpp" />
@@ -150,6 +151,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="DataDeviceThread.h" />
     <ClInclude Include="Debug.h" />
     <ClInclude Include="Dialog.h" />
     <ClInclude Include="General.h" />
