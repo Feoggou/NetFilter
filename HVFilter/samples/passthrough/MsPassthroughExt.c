@@ -31,7 +31,8 @@ ULONG SxExtOidRequestId = 'tPsM';
 NDIS_STATUS
 SxExtInitialize()
 {
-	create_pipe_server();
+	//create_pipe_server();
+	init_io_data();
 
     return NDIS_STATUS_SUCCESS;
 }
@@ -40,7 +41,8 @@ SxExtInitialize()
 VOID
 SxExtUninitialize()
 {
-	uninit_pipe_server();
+	//uninit_pipe_server();
+	uninit_io_data();
 
     return;
 }

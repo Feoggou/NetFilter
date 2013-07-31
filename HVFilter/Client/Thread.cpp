@@ -34,6 +34,9 @@ void Thread::Start()
 	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)StartProc, this, 0, 0);
 }
 
+void Thread::Stop()
+{}
+
 void Thread::Close()
 {
 	if (m_hThread != INVALID_HANDLE_VALUE) {

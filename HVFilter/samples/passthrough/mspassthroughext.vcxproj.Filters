@@ -33,7 +33,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="*.h;*.hpp;*.hxx;*.hm;*.inl;*.xsd">
+    <ClInclude Include="SendPacketsInfo.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Pipes\Pipes.h">
@@ -42,7 +42,9 @@
     <ClInclude Include="precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SendPacketsInfo.h" />
+    <ClInclude Include="SendPacketsInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="MsPassthroughExt.rc">

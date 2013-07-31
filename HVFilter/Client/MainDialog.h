@@ -27,15 +27,22 @@ private:
 	void OnBrowse();
 
 public:
-	HWND GetPackageCountEdit() {return m_hPackageCountEdit;}
-	HWND GetPackageSizeEdit() {return m_hPackageSizeEdit;}
+	HWND GetInboundPackageCountEdit() {return m_hInboundPackageCountEdit;}
+	HWND GetInboundPackageSizeEdit() {return m_hInboundPackageSizeEdit;}
+
+	HWND GetOutboundPackageCountEdit() {return m_hOutboundPackageCountEdit;}
+	HWND GetOutboundPackageSizeEdit() {return m_hOutboundPackageSizeEdit;}
 
 private:
 	void OnCommand(WORD source, WORD id, HWND hControl) override;
 
 private:
-	HWND	m_hPackageCountEdit;
-	HWND	m_hPackageSizeEdit;
+	HWND	m_hInboundPackageCountEdit;
+	HWND	m_hInboundPackageSizeEdit;
 
+	HWND	m_hOutboundPackageCountEdit;
+	HWND	m_hOutboundPackageSizeEdit;
+
+	//TODO: it's not the best place for a thread obj here.
 	DataDeviceThread			m_dataDeviceThread;
 };

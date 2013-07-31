@@ -12,6 +12,7 @@ public:
 	bool IsRunning() const;
 	void Wait(int msecs = INFINITE);
 	void Close();
+	virtual void Stop();
 
 protected:
 	virtual void OnStart() = 0;

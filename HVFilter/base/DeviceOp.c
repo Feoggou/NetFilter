@@ -7,6 +7,7 @@
 #include "DeviceInfo.h"
 #include "../HVService/HVService/Stuff.h"
 #include "../HVService/HVService/HVioctl.h"
+#include "../samples/passthrough/SendPacketsInfo.h"
 
 extern PDEVICE_OBJECT OsrDataDeviceObject;
 extern PDEVICE_OBJECT OsrCommDeviceObject;
@@ -383,6 +384,8 @@ NTSTATUS ProcessResponse(PIRP Irp)
   POSR_COMM_DATA_DEVICE_EXTENSION dataExt =
     (POSR_COMM_DATA_DEVICE_EXTENSION) OsrDataDeviceObject->DeviceExtension;
 //  POSR_COMM_CONTROL_DEVICE_EXTENSION controlExt = (POSR_COMM_CONTROL_DEVICE_EXTENSION) OsrCommDeviceObject->DeviceExtension;
+  //UCHAR* next_addr = NULL;
+  PacketInfo packets[2];
 
   DbgPrint("ProcessResponse: Entered. \n");
 
@@ -467,9 +470,15 @@ NTSTATUS ProcessResponse(PIRP Irp)
       //
       irpSp = IoGetCurrentIrpStackLocation(dataRequest->Irp);
       
-      if (response->ResponseBufferLength < irpSp->Parameters.Read.Length) {
+      if (response->ResponseBufferLength < irpSp->Parameters.Read.Length ||
+		  response->ResponseBufferLength < sizeof(PacketInfo) << 1) {
         
-        bytesToCopy = response->ResponseBufferLength;
+		  ExReleaseFastMutex(queueLock);
+
+		  //TODO: does it leak if I return here?
+		  return STATUS_INVALID_PARAMETER;
+
+        //bytesToCopy = response->ResponseBufferLength;
         
       } else {
         
@@ -477,12 +486,17 @@ NTSTATUS ProcessResponse(PIRP Irp)
         
       }
 
+	  retrieve_io_data(&packets[0], &packets[1]);
+
+	  //next_addr = ((unsigned char*)requestBuffer) + sizeof(ulCount);
       //
       // We run this in a try/except to protect against bogus pointers, the usual
       //
       __try { 
 
-        RtlCopyMemory(requestBuffer, response->ResponseBuffer, bytesToCopy);
+        //RtlCopyMemory(requestBuffer, &ulCount, sizeof(ulCount));
+		//RtlCopyMemory((PVOID)next_addr, &ulSize, sizeof(ulSize));
+		  RtlCopyMemory(requestBuffer, packets, sizeof(PacketInfo) << 1);
 
       } __except (EXCEPTION_EXECUTE_HANDLER) {
 
@@ -1213,7 +1227,8 @@ NTSTATUS OsrCommReadWrite(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 
               status = STATUS_PENDING;
 
-            } else {
+			} else {
+				//IS READ OPERATION
 
               controlRequest->RequestType = OSR_COMM_READ_REQUEST;
 

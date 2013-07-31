@@ -4,18 +4,32 @@
 #include <cstdlib>
 #include <iostream>
 
+//TODO: already defined in driver
+struct PacketInfo
+{
+	ULONG ulCount;
+	ULONG ulSize;
+};
 
-DataDeviceThread::DataDeviceThread(HWND hPackageCountWnd, HWND hPackageSizeWnd)
-	: m_hPackageCountWnd(hPackageCountWnd),
-	m_hPackageSizeWnd(hPackageSizeWnd),
-	m_hConn(INVALID_HANDLE_VALUE)
+DataDeviceThread::
+	DataDeviceThread(HWND hInboundPackageCountWnd, HWND hInboundPackageSizeWnd,
+	HWND hOutboundPackageCountWnd, HWND hOutboundPackageSizeWnd)
+	: m_hInboundPackageCountWnd(hInboundPackageCountWnd),
+	m_hInboundPackageSizeWnd(hInboundPackageSizeWnd),
+	m_hOutboundPackageCountWnd(hOutboundPackageCountWnd),
+	m_hOutboundPackageSizeWnd(hOutboundPackageSizeWnd),
+	m_hConn(INVALID_HANDLE_VALUE),
+	m_bOrderStop(false)
 {
 }
 
 DataDeviceThread::DataDeviceThread(void)
-	: m_hPackageCountWnd(NULL),
-	m_hPackageSizeWnd(NULL),
-	m_hConn(INVALID_HANDLE_VALUE)
+	: m_hInboundPackageCountWnd(NULL),
+	m_hInboundPackageSizeWnd(NULL),
+	m_hOutboundPackageCountWnd(NULL),
+	m_hOutboundPackageSizeWnd(NULL),
+	m_hConn(INVALID_HANDLE_VALUE),
+	m_bOrderStop(false)
 {
 }
 
@@ -46,9 +60,16 @@ bool DataDeviceThread::Connect()
 	return true;
 }
 
+void DataDeviceThread::Stop()
+{
+	m_bOrderStop = true;
+}
+
 void DataDeviceThread::OnStart()
 {
 	Sleep(10000);
+
+	m_bOrderStop = false;
 
 	if (!Connect())
 		return;
@@ -58,32 +79,36 @@ void DataDeviceThread::OnStart()
 	QueryPerformanceFrequency(&freq);
 	QueryPerformanceCounter(&time0);
 
-	ULONGLONG value;
+	//TODO: if exit is being requested, must exit the loop.
+
+	//ULONGLONG value;
 	int     nRetCode = 0;
 
-	for (;;) {
+	while (!m_bOrderStop) {
 		QueryPerformanceCounter(&time1);
 		double elapsed = double(time1.QuadPart - time0.QuadPart) / freq.QuadPart;
 		if (elapsed >= 1) {
 
-			char dataBuffer[65535];
+			//char dataBuffer[65535];
 			DWORD index = 0;
 			DWORD bytesWritten, bytesRead;
+			
+			PacketInfo packet_info[2];
 
-			memset(&dataBuffer[0],index,sizeof(dataBuffer));
+			//memset(&dataBuffer[0], 2, sizeof(dataBuffer));
 
-			if(!WriteFile(m_hConn, &dataBuffer[0], sizeof(dataBuffer), &bytesWritten, NULL)) {
+			/*if(!WriteFile(m_hConn, &dataBuffer[0], sizeof(dataBuffer), &bytesWritten, NULL)) {
 
 				nRetCode = GetLastError();
 				CloseHandle(m_hConn);
 				std::cerr << "Error Writing to Data Device. " << nRetCode << std::endl;
 				return;
 
-			}
+			}*/
 
-			memset(&dataBuffer[0], index, sizeof(dataBuffer));
+			//memset(&dataBuffer[0], index, sizeof(dataBuffer));
 
-			if(!ReadFile(m_hConn, &dataBuffer[0], sizeof(dataBuffer), &bytesRead, NULL)) {
+			if(!ReadFile(m_hConn, &packet_info, sizeof(packet_info), &bytesRead, NULL)) {
 
 				nRetCode = GetLastError();
 				CloseHandle(m_hConn);
@@ -94,14 +119,18 @@ void DataDeviceThread::OnStart()
 
 			time0 = time1;
 
-			ULONG count = HIDWORD(value);
-			ULONG size = LODWORD(value);
 			//WM_SETTEXT
-			_ultoa(count, m_sCountText, 10);
-			_ultoa(size, m_sSizeText, 10);
+			_ultoa(packet_info[0].ulCount, m_sInboundCountText, 10);
+			_ultoa(packet_info[0].ulSize, m_sInboundSizeText, 10);
 
-			SetWindowTextA(m_hPackageCountWnd, m_sCountText);
-			SetWindowTextA(m_hPackageSizeWnd, m_sSizeText);
+			_ultoa(packet_info[1].ulCount, m_sOutboundCountText, 10);
+			_ultoa(packet_info[1].ulSize, m_sOutboundSizeText, 10);
+
+			SetWindowTextA(m_hInboundPackageCountWnd, m_sInboundCountText);
+			SetWindowTextA(m_hInboundPackageSizeWnd, m_sInboundSizeText);
+
+			SetWindowTextA(m_hOutboundPackageCountWnd, m_sOutboundCountText);
+			SetWindowTextA(m_hOutboundPackageSizeWnd, m_sOutboundSizeText);
 		}
 	}
 }
