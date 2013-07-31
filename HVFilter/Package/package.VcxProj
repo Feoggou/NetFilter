@@ -60,7 +60,10 @@
     <VerifyFlags>133563</VerifyFlags>
     <PackageDir>$(OutDir)Package</PackageDir>
   </PropertyGroup>
-  <ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Win8 Debug|x64'">
+    <Inf2Cat>
+      <UseLocalTime>true</UseLocalTime>
+    </Inf2Cat>
   </ItemDefinitionGroup>
   <ItemGroup>
     <!--Inf Include="DriverInf.inv" /-->
