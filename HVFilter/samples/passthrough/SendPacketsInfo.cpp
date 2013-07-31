@@ -8,15 +8,15 @@ public:
 
 private:
 	void Acquire() { ExAcquireFastMutex(m_pMutex); }
-	void Release() { ExAcquireFastMutex(m_pMutex); }
+	void Release() { ExReleaseFastMutex(m_pMutex); }
 
 private:
 	PFAST_MUTEX	m_pMutex;
 };
 
 namespace {
-	FAST_MUTEX g_inbound_mutex;
-	FAST_MUTEX g_outbound_mutex;
+	/*FAST_MUTEX g_inbound_mutex;
+	FAST_MUTEX g_outbound_mutex;*/
 
 	PacketInfo g_inbound_data = {0};
 	PacketInfo g_outbound_data = {0};
@@ -24,8 +24,8 @@ namespace {
 
 void init_io_data()
 {
-	ExInitializeFastMutex(&g_inbound_mutex);
-	ExInitializeFastMutex(&g_outbound_mutex);
+	/*ExInitializeFastMutex(&g_inbound_mutex);
+	ExInitializeFastMutex(&g_outbound_mutex);*/
 }
 
 void uninit_io_data()
@@ -35,12 +35,12 @@ void uninit_io_data()
 void add_io_data(ULONG count, ULONG size, BOOLEAN is_inbound)
 {
 	if (is_inbound) {
-		FastMutexLocker lock(&g_inbound_mutex);
+		//FastMutexLocker lock(&g_inbound_mutex);
 
 		g_inbound_data.ulCount += count;
 		g_inbound_data.ulSize += size;
 	} else {
-		FastMutexLocker lock(&g_outbound_mutex);
+		//FastMutexLocker lock(&g_outbound_mutex);
 
 		g_outbound_data.ulCount += count;
 		g_outbound_data.ulSize += size;
@@ -50,22 +50,22 @@ void add_io_data(ULONG count, ULONG size, BOOLEAN is_inbound)
 void retrieve_io_data(__out PacketInfo* inbound, __out PacketInfo* outbound)
 {
 	//inbound
-	ExAcquireFastMutex(&g_inbound_mutex);
+	//ExAcquireFastMutex(&g_inbound_mutex);
 
 	inbound->ulSize = g_inbound_data.ulSize;
 	inbound->ulCount = g_inbound_data.ulCount;
 
-	RtlZeroMemory(&g_inbound_data, sizeof(g_inbound_data));
-	ExReleaseFastMutex(&g_inbound_mutex);
+	//RtlZeroMemory(&g_inbound_data, sizeof(g_inbound_data));
+	//ExReleaseFastMutex(&g_inbound_mutex);
 
 	//outbound
-	ExAcquireFastMutex(&g_outbound_mutex);
+	//ExAcquireFastMutex(&g_outbound_mutex);
 
 	outbound->ulSize = g_outbound_data.ulSize;
 	outbound->ulCount = g_outbound_data.ulCount;
 
-	RtlZeroMemory(&g_outbound_data, sizeof(g_outbound_data));
-	ExReleaseFastMutex(&g_outbound_mutex);
+	//RtlZeroMemory(&g_outbound_data, sizeof(g_outbound_data));
+	//ExReleaseFastMutex(&g_outbound_mutex);
 }
 
 ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
@@ -87,17 +87,25 @@ ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 
 ULONG process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size)
 {
-	NET_BUFFER_LIST* buffer_list = NetBufferLists;
 	int count = 0;
-	total_size = 0;
+	NET_BUFFER_LIST* buffer_list = NetBufferLists;
 
-	while (buffer_list) {
-		//operations
-		total_size += process_buffers(buffer_list);
+	__try {
+		
 
-		buffer_list = NET_BUFFER_LIST_NEXT_NBL(NetBufferLists);
+		total_size = 0;
 
-		++count;
+		while (buffer_list) {
+			//operations
+			total_size += process_buffers(buffer_list);
+
+			buffer_list = NET_BUFFER_LIST_NEXT_NBL(buffer_list);
+
+			++count;
+		}
+	} __except(EXCEPTION_EXECUTE_HANDLER) {
+
+		return 0;
 	}
 
 	return count;

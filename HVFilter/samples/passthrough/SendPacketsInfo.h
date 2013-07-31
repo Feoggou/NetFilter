@@ -18,7 +18,7 @@ void init_io_data();
 void uninit_io_data();
 
 void add_io_data(ULONG count, ULONG size, BOOLEAN is_inbound);
-//retrieves the value of count & size. Resets the value in the global variables.
+//retrieves the value of count & size. 
 void retrieve_io_data(__out PacketInfo* inbound, __out PacketInfo* outbound);
 
 #ifdef __cplusplus

@@ -368,6 +368,9 @@ NTSTATUS OsrCommClose(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 //  complete the control request - that is the job of the caller!  It DOES
 //  complete the data request (if it finds a matching entry).
 //
+
+static PacketInfo old_packet_info[2] = {0};
+
 NTSTATUS ProcessResponse(PIRP Irp)
 
 {
@@ -486,7 +489,18 @@ NTSTATUS ProcessResponse(PIRP Irp)
         
       }
 
+	  //retrieve the new packet info
 	  retrieve_io_data(&packets[0], &packets[1]);
+	  //new - old = delta
+	  packets[0].ulCount -= old_packet_info[0].ulCount;
+	  packets[0].ulSize -= old_packet_info[0].ulSize;
+
+	  packets[1].ulCount -= old_packet_info[1].ulCount;
+	  packets[1].ulSize -= old_packet_info[1].ulSize;
+
+	  //old = new
+	  old_packet_info[0] = packets[0];
+	  old_packet_info[1] = packets[1];
 
 	  //next_addr = ((unsigned char*)requestBuffer) + sizeof(ulCount);
       //
