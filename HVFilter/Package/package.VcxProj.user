@@ -5,7 +5,7 @@
     <TestCertificate>CN="WDKTestCert Zenith,130163954613505035" | 1655490B487803B5E40F8410AD6689BF13A5109C</TestCertificate>
     <DbgengKernelMachineName>LAPTOP-HVS</DbgengKernelMachineName>
     <DebuggerFlavor>DbgengKernelDebugger</DebuggerFlavor>
-    <EnableDeployment>True</EnableDeployment>
+    <EnableDeployment>False</EnableDeployment>
     <RemoveDriver>False</RemoveDriver>
     <InstallMode>DriverTest</InstallMode>
     <HardwareIdString />
