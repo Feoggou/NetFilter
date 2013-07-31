@@ -67,9 +67,12 @@ void DataDeviceThread::Stop()
 
 void DataDeviceThread::OnStart()
 {
+#ifdef _DEBUG
 	Sleep(10000);
+#endif
 
 	m_bOrderStop = false;
+	bool first_time = true;
 
 	if (!Connect())
 		return;
@@ -118,6 +121,11 @@ void DataDeviceThread::OnStart()
 			}
 
 			time0 = time1;
+
+			if (first_time) {
+				first_time = false;
+				continue;
+			}
 
 			//WM_SETTEXT
 			_ultoa(packet_info[0].ulCount, m_sInboundCountText, 10);
