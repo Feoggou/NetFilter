@@ -14,10 +14,10 @@ public:
 		HWND hOutboundPackageCountWnd, HWND hOutboundPackageSizeWnd)
 	{
 			m_hInboundPackageCountWnd = hInboundPackageCountWnd;
-			m_hInboundPackageCountWnd = hInboundPackageSizeWnd;
+			m_hInboundPackageSizeWnd = hInboundPackageSizeWnd;
 
 			m_hOutboundPackageCountWnd = hOutboundPackageCountWnd;
-			m_hOutboundPackageCountWnd = hOutboundPackageSizeWnd;
+			m_hOutboundPackageSizeWnd = hOutboundPackageSizeWnd;
 	}
 
 	void Stop() override;
