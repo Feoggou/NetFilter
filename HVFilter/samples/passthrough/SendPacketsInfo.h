@@ -1,15 +1,15 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "precomp.h"
 
 typedef struct _PacketInfo {
 	ULONG		ulCount;
 	ULONG		ulSize;
 } PacketInfo;
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void push_buffers_info_lists_inbound(PNET_BUFFER_LIST NetBufferLists);
 void push_buffers_info_lists_outbound(PNET_BUFFER_LIST NetBufferLists);
