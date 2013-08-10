@@ -68,53 +68,124 @@ void retrieve_io_data(__out PacketInfo* inbound, __out PacketInfo* outbound)
 	//ExReleaseFastMutex(&g_outbound_mutex);
 }
 
-//struct MAC_HEADER
-//{
-//	BYTE	destination_addr[6];
-//	BYTE	source_addr[6];
-//	WORD	type;
-//};
+struct Z_ETH_HEADER
+{
+	BYTE	destination_addr[6];
+	BYTE	source_addr[6];
+	WORD	type;
+};
 
-//C_ASSERT(sizeof(MAC_HEADER) == 14);
+C_ASSERT(sizeof(Z_ETH_HEADER) == 14);
 
-C_ASSERT(sizeof(ETHERNET_HEADER) == 14);
+//C_ASSERT(sizeof(ETHERNET_HEADER) == 14);
 
-enum {EtherType_IPv4 = 0x800};
+enum {EtherType_IPv4 = 0x800, EtherType_IPv6 = 0x86DD};
 
-//struct IPV4_HEADER
-//{
-//	BYTE version:	4;
-//	BYTE IHL:		4;
-//	BYTE TOS;
-//	WORD total_length;
-//	WORD identification;
-//	WORD flags:				3;
-//	WORD fragment_offset:	13;
-//	BYTE TTL;
-//	BYTE protocol;
-//	WORD header_checksum;
-//	DWORD source_address;
-//	DWORD destination_address;
-//};
+struct Z_IPV4_HEADER
+{
+	BYTE version:	4;
+	BYTE IHL:		4;
+	BYTE TOS;
+	WORD total_length;
+	WORD identification;
+	WORD flags:				3;
+	WORD fragment_offset:	13;
+	BYTE TTL;
+	BYTE protocol;
+	WORD header_checksum;
+	DWORD source_address;
+	DWORD destination_address;
+};
 
-C_ASSERT(sizeof(IPV4_HEADER) == 20);
+C_ASSERT(sizeof(Z_IPV4_HEADER) == 20);
 
-//struct TCP_HEADER
-//{
-//	WORD source_port;
-//	WORD destination_port;
-//	DWORD sequence_number;
-//	DWORD ack_number;
-//	WORD data_offset:	4;
-//	WORD reserved:		6;
-//	WORD control_bits:	6;
-//	WORD window;
-//	WORD checksum;
-//	WORD urgent_pointer;
-//};
+struct Z_TCP_HEADER
+{
+	WORD source_port;
+	WORD destination_port;
+	DWORD sequence_number;
+	DWORD ack_number;
+	WORD data_offset:	4;
+	WORD reserved:		6;
+	WORD control_bits:	6;
+	WORD window;
+	WORD checksum;
+	WORD urgent_pointer;
+};
 
-//C_ASSERT(sizeof(TCP_HEADER) == 20);
-C_ASSERT(sizeof(TCP_HDR) == 20);
+C_ASSERT(sizeof(Z_TCP_HEADER) == 20);
+//C_ASSERT(sizeof(TCP_HDR) == 20);
+
+typedef TCP_HDR tcp_header_t;
+typedef IPV4_HEADER ipv4_header_t;
+typedef ETHERNET_HEADER eth_header_t;
+
+void read_tcp_header(NET_BUFFER* buffer, ipv4_header_t* pIpHeader)
+{
+	WORD offset = pIpHeader->TotalLength;
+
+	NDIS_STATUS status = NdisRetreatNetBufferDataStart(buffer, offset, 0, NULL);
+	if (status == NDIS_STATUS_SUCCESS)
+	{
+		tcp_header_t* pTcpHeader = (tcp_header_t*)NdisGetDataBuffer(buffer, sizeof(tcp_header_t), NULL, 1, 0);
+
+		if (pTcpHeader) {
+			DbgPrint("have tcp: port destination = 0x%x; source= 0x%x\n", pTcpHeader->th_dport, pTcpHeader->th_sport);
+		} else {
+			DbgPrint("could not retrieve ip4 header: should have allocated storage in NdisGetDataBuffer!\n");
+		}
+		NdisAdvanceNetBufferDataStart(buffer, offset, true, NULL);
+	}
+
+	else
+	{
+		DbgPrint("could not use NdisRetreat on ip header\n");
+	}
+}
+
+void read_ip_header(NET_BUFFER* buffer, eth_header_t* pEthHeader)
+{
+	if (pEthHeader->Type == RtlUshortByteSwap(EtherType_IPv4))
+	{
+		DbgPrint("eth type = ipv4 = 0x%x\n", pEthHeader->Type);
+
+		NDIS_STATUS status = NdisRetreatNetBufferDataStart(buffer, sizeof(eth_header_t), 0, NULL);
+		if (status == NDIS_STATUS_SUCCESS)
+		{
+			ipv4_header_t* pIpHeader = (ipv4_header_t*)NdisGetDataBuffer(buffer, sizeof(ipv4_header_t), NULL, 1, 0);
+			if (pIpHeader) {
+				DbgPrint("have ip: destination=0x%x source=0x%x\n", pIpHeader->DestinationAddress, pIpHeader->SourceAddress);
+				read_tcp_header(buffer, pIpHeader);
+			} else {
+				DbgPrint("could not retrieve ip4 header: should have allocated storage in NdisGetDataBuffer!\n");
+			}
+			
+			NdisAdvanceNetBufferDataStart(buffer, sizeof(eth_header_t), true, NULL);
+		}
+
+		else
+		{
+			DbgPrint("could not use NdisRetreat on ip header\n");
+		}
+	}
+
+	else
+	{
+		//DbgPrint("ethertype: 0x%x", pEthHeader->type);
+	}
+
+}
+
+void read_eth_header(NET_BUFFER* buffer)
+{
+	eth_header_t* pEthHeader = (eth_header_t*)NdisGetDataBuffer(buffer, sizeof(eth_header_t), NULL, 1, 0);
+	if (pEthHeader) {} else {
+		DbgPrint("could not retrieve mac header: should have allocated storage in NdisGetDataBuffer!\n");
+		return;
+	}
+
+	read_ip_header(buffer, pEthHeader);
+}
 
 ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 {
@@ -123,37 +194,14 @@ ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 	NET_BUFFER* buffer = NET_BUFFER_LIST_FIRST_NB(NetBufferLists);
 
 	while (buffer) {
-		//process buffer
-		ETHERNET_HEADER* pMacHeader = (ETHERNET_HEADER*)NdisGetDataBuffer(buffer, sizeof(ETHERNET_HEADER), NULL, 1, 0);
-		if (!pMacHeader) {
-			DbgPrint("could not retrieve mac header: should have allocated storage in NdisGetDataBuffer!");
-		} else {
-			if (pMacHeader->Type == EtherType_IPv4) {
-				NDIS_STATUS status = NdisRetreatNetBufferDataStart(buffer, sizeof(ETHERNET_HEADER), 0, NULL);
-				if (status == NDIS_STATUS_SUCCESS) {
-					IPV4_HEADER* pIpHeader = (IPV4_HEADER*)NdisGetDataBuffer(buffer, sizeof(IPV4_HEADER), NULL, 1, 0);
-					if (!pIpHeader) {
-						DbgPrint("could not retrieve ip4 header: should have allocated storage in NdisGetDataBuffer!");
-					} else {
-						WORD offset = pIpHeader->TotalLength;
-						NDIS_STATUS status = NdisRetreatNetBufferDataStart(buffer, offset, 0, NULL);
-						if (status == NDIS_STATUS_SUCCESS) {
-							TCP_HDR* pTcpHeader = (TCP_HDR*)NdisGetDataBuffer(buffer, sizeof(TCP_HDR), NULL, 1, 0);
-							if (!pTcpHeader) {
-								DbgPrint("could not retrieve ip4 header: should have allocated storage in NdisGetDataBuffer!");
-							}
 
-							NdisAdvanceNetBufferDataStart(buffer, offset, true, NULL);
-						}
-					}
+		ULONG buffer_size = NET_BUFFER_DATA_LENGTH(buffer);
+		DbgPrint("buffer size: %u = 0x%x\n", buffer_size, buffer_size);
 
-					NdisAdvanceNetBufferDataStart(buffer, sizeof(ETHERNET_HEADER), true, NULL);
-				}
-			}
-		}
+		read_eth_header(buffer);
 
 		//I'll assume there are is no total size of buffer size >= 2^32 bytes
-		total_size += NET_BUFFER_DATA_LENGTH(buffer);
+		total_size += buffer_size;
 
 		buffer = NET_BUFFER_NEXT_NB(buffer);
 	}

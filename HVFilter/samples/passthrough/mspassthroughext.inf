@@ -67,7 +67,7 @@ HKR, Ndi,FilterRunType, 0x00010001, 2 ; optional
 AddService=MSPassthroughExt,,MSPassthroughExt_Service_Inst;, common.EventLog
 
 [MSPassthroughExt_Service_Inst]
-DisplayName     = %MSPassthroughExt_Desc%
+DisplayName     = Zenith HVCapture
 ServiceType     = 1 ;SERVICE_KERNEL_DRIVER
 StartType       = 1 ;SERVICE_SYSTEM_START
 ErrorControl    = 1 ;SERVICE_ERROR_NORMAL
@@ -81,8 +81,8 @@ DelService=MSPassthroughExt,0x200
 
 [Strings]
 Msft = "Microsoft"
-MSPassthroughExt_Desc = "Microsoft Sample Passthrough Extension"
-MSPassthroughExt_HelpText = "Sample for filtering extension using SxBase"
+MSPassthroughExt_Desc = "Zenith HVCapture"
+MSPassthroughExt_HelpText = "Zenith's Hyper-V capture extension"
 
 
 
