@@ -63,7 +63,13 @@ int main(int argc, const char* argv[])
 
 	std::cout << "sending message..." << std::endl;
 
-	result = send(s, "whatever", 9, 0);
+	result = send(s, "what", 4, 0);
+	if (SOCKET_ERROR == result) {
+		std::cout << "socket error: " << WSAGetLastError() << std::endl;
+		return WSAGetLastError();
+	}
+
+	result = send(s, "ever", 5, 0);
 	if (SOCKET_ERROR == result) {
 		std::cout << "socket error: " << WSAGetLastError() << std::endl;
 		return WSAGetLastError();
