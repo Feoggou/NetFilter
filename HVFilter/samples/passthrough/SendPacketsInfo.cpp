@@ -145,8 +145,9 @@ DWORD read_tcp_timestamp(BYTE* buffer)
 	BYTE* pTimestampOption = (BYTE*)buffer;
 	ASSERT(pTimestampOption);
 
+	//buffer = kind; buffer + 1 = length; buffer + 2 == timestamp needed (4 bytes). buffer + 6 = timestamp echo (4 bytes).
 	DWORD dwTimeStamp = *(DWORD*)(pTimestampOption + 2);
-	return dwTimeStamp;
+	return RtlUlongByteSwap(dwTimeStamp);
 }
 
 void read_tcp_data(BYTE* buffer, DWORD offset /*padding + last option*/, DWORD data_size /*size to read as packet content*/)
