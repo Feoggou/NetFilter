@@ -93,10 +93,13 @@ int main(int argc, const char* argv[])
 	char buf[9];
 
 	std::cout << "receiving bytes" << std::endl;
-	result = recv(conn, buf, 9, 0);
-	if (SOCKET_ERROR == result) {
-		std::cout << "socket error: " << WSAGetLastError() << std::endl;
-		return WSAGetLastError();
+
+	for (int i = 0; i < 1000; ++i) {
+		result = recv(conn, buf, 9, 0);
+		if (SOCKET_ERROR == result) {
+			std::cout << "socket error: " << WSAGetLastError() << std::endl;
+			return WSAGetLastError();
+		}
 	}
 
 	std::cout << "receive finished. sending message back..." << std::endl;
