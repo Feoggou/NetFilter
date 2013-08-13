@@ -3,13 +3,14 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 
-//TODO: already defined in driver
-struct PacketInfo
-{
-	ULONG ulCount;
-	ULONG ulSize;
-};
+////TODO: already defined in driver
+//struct PacketInfo
+//{
+//	ULONG ulCount;
+//	ULONG ulSize;
+//};
 
 DataDeviceThread::
 	DataDeviceThread(HWND hInboundPackageCountWnd, HWND hInboundPackageSizeWnd,
@@ -87,6 +88,15 @@ void DataDeviceThread::OnStart()
 	//ULONGLONG value;
 	int     nRetCode = 0;
 
+	WCHAR cur_dir_path[MAX_PATH];
+
+	GetCurrentDirectoryW(MAX_PATH, cur_dir_path);
+	std::wstring path = cur_dir_path;
+	path += L"\\info.txt";
+
+	std::ofstream of(path);
+	BYTE* data = new BYTE[2000 * 2];
+
 	while (!m_bOrderStop) {
 		QueryPerformanceCounter(&time1);
 		double elapsed = double(time1.QuadPart - time0.QuadPart) / freq.QuadPart;
@@ -95,8 +105,6 @@ void DataDeviceThread::OnStart()
 			//char dataBuffer[65535];
 			DWORD index = 0;
 			DWORD bytesWritten, bytesRead;
-			
-			PacketInfo packet_info[2];
 
 			//memset(&dataBuffer[0], 2, sizeof(dataBuffer));
 
@@ -111,7 +119,7 @@ void DataDeviceThread::OnStart()
 
 			//memset(&dataBuffer[0], index, sizeof(dataBuffer));
 
-			if(!ReadFile(m_hConn, &packet_info, sizeof(packet_info), &bytesRead, NULL)) {
+			if(!ReadFile(m_hConn, data, 2000 * 2, &bytesRead, NULL)) {
 
 				nRetCode = GetLastError();
 				CloseHandle(m_hConn);
@@ -120,25 +128,52 @@ void DataDeviceThread::OnStart()
 
 			}
 
-			time0 = time1;
+			BYTE inbound_source[4], inbound_destination[4], outbound_source[4], outbound_destination[4];
 
-			if (first_time) {
-				first_time = false;
-				continue;
+			memcpy(inbound_source, data, 4);
+			memcpy(inbound_destination, data + 4, 4);
+			WORD inbound_size = 0;
+			memcpy(&inbound_size, data + 8, 2);
+
+			of << "inbound source: " << inbound_source[0] << '.' << inbound_source[1] << '.' << inbound_source[2] << '.' << inbound_source[3] << std::endl;
+			of << "inbound destination: " << inbound_destination[0] << '.' << inbound_destination[1] << '.' <<
+				inbound_destination[2] << '.' << inbound_destination[3] << std::endl;
+			of << "inbound data size: " << inbound_size << std::endl;
+
+			if (inbound_size > 0) {
+				char* inbound_data = new char[inbound_size];
+				memcpy(&inbound_data, data + 10, inbound_size);
+
+				of << "inbound data: " << inbound_data << std::endl << std::endl;
+
+				delete[] inbound_data;
 			}
 
-			//WM_SETTEXT
-			_ultoa(packet_info[0].ulCount, m_sInboundCountText, 10);
-			_ultoa(packet_info[0].ulSize, m_sInboundSizeText, 10);
+			//----------------------------
+			data += 2000;
 
-			_ultoa(packet_info[1].ulCount, m_sOutboundCountText, 10);
-			_ultoa(packet_info[1].ulSize, m_sOutboundSizeText, 10);
+			memcpy(outbound_source, data, 4);
+			memcpy(outbound_destination, data + 4, 4);
+			WORD outbound_size = 0;
+			memcpy(&outbound_size, data + 8, 2);
 
-			SetWindowTextA(m_hInboundPackageCountWnd, m_sInboundCountText);
-			SetWindowTextA(m_hInboundPackageSizeWnd, m_sInboundSizeText);
+			of << "outbound source: " << outbound_source[0] << '.' << outbound_source[1] << '.' << outbound_source[2] << '.' << outbound_source[3] << std::endl;
+			of << "outbound destination: " << outbound_destination[0] << '.' << outbound_destination[1] << '.' <<
+				outbound_destination[2] << '.' << outbound_destination[3] << std::endl;
+			of << "outbound data size: " << outbound_size << std::endl;
 
-			SetWindowTextA(m_hOutboundPackageCountWnd, m_sOutboundCountText);
-			SetWindowTextA(m_hOutboundPackageSizeWnd, m_sOutboundSizeText);
+			if (outbound_size > 0) {
+				char* outbound_data = new char[outbound_size];
+				memcpy(&outbound_data, data + 10, outbound_size);
+
+				of << "outbound data: " << outbound_data << std::endl << std::endl;
+
+				delete[] outbound_data;
+			}
+
+			of << "-------------------------------------" << std::endl;
 		}
 	}
+
+	delete data;
 }

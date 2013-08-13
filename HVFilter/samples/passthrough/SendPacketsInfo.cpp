@@ -14,59 +14,67 @@ private:
 	PFAST_MUTEX	m_pMutex;
 };
 
-namespace {
-	/*FAST_MUTEX g_inbound_mutex;
-	FAST_MUTEX g_outbound_mutex;*/
+FAST_MUTEX g_inbound_mutex;
+FAST_MUTEX g_outbound_mutex;
 
-	PacketInfo g_inbound_data = {0};
-	PacketInfo g_outbound_data = {0};
-}
+BYTE* g_pInboundData;
+BYTE* g_pOutboundData;
 
 void init_io_data()
 {
-	/*ExInitializeFastMutex(&g_inbound_mutex);
-	ExInitializeFastMutex(&g_outbound_mutex);*/
+	ExInitializeFastMutex(&g_inbound_mutex);
+	ExInitializeFastMutex(&g_outbound_mutex);
+
+	g_pInboundData = (BYTE*)ExAllocatePoolWithTag(PagedPool, 2000, 'tDbI');
+	ASSERT(g_pInboundData);
+	RtlZeroMemory(g_pInboundData, 2000);
+
+	g_pOutboundData = (BYTE*)ExAllocatePoolWithTag(PagedPool, 2000, 'tDbO');
+	ASSERT(g_pOutboundData);
+	RtlZeroMemory(g_pOutboundData, 2000);
 }
 
 void uninit_io_data()
 {
+	ExFreePoolWithTag(g_pInboundData, 'tDbI');
+	ExFreePoolWithTag(g_pOutboundData, 'tDbO');
 }
 
-void add_io_data(ULONG count, ULONG size, BOOLEAN is_inbound)
-{
-	if (is_inbound) {
-		//FastMutexLocker lock(&g_inbound_mutex);
-
-		g_inbound_data.ulCount += count;
-		g_inbound_data.ulSize += size;
-	} else {
-		//FastMutexLocker lock(&g_outbound_mutex);
-
-		g_outbound_data.ulCount += count;
-		g_outbound_data.ulSize += size;
-	}
-}
-
-void retrieve_io_data(__out PacketInfo* inbound, __out PacketInfo* outbound)
-{
-	//inbound
-	//ExAcquireFastMutex(&g_inbound_mutex);
-
-	inbound->ulSize = g_inbound_data.ulSize;
-	inbound->ulCount = g_inbound_data.ulCount;
-
-	//RtlZeroMemory(&g_inbound_data, sizeof(g_inbound_data));
-	//ExReleaseFastMutex(&g_inbound_mutex);
-
-	//outbound
-	//ExAcquireFastMutex(&g_outbound_mutex);
-
-	outbound->ulSize = g_outbound_data.ulSize;
-	outbound->ulCount = g_outbound_data.ulCount;
-
-	//RtlZeroMemory(&g_outbound_data, sizeof(g_outbound_data));
-	//ExReleaseFastMutex(&g_outbound_mutex);
-}
+//void add_io_data(ULONG count, ULONG size, BOOLEAN is_inbound)
+//{
+//	if (is_inbound) {
+//		//FastMutexLocker lock(&g_inbound_mutex);
+//
+//		g_inbound_data.ulCount += count;
+//		g_inbound_data.ulSize += size;
+//	} else {
+//		//FastMutexLocker lock(&g_outbound_mutex);
+//
+//		g_outbound_data.ulCount += count;
+//		g_outbound_data.ulSize += size;
+//	}
+//}
+//
+//void retrieve_io_data(__out PacketInfo* inbound, __out PacketInfo* outbound)
+//{
+//	//inbound
+//	//ExAcquireFastMutex(&g_inbound_mutex);
+//
+//	inbound->ulSize = g_inbound_data.ulSize;
+//	inbound->ulCount = g_inbound_data.ulCount;
+//
+//	//RtlZeroMemory(&g_inbound_data, sizeof(g_inbound_data));
+//	//ExReleaseFastMutex(&g_inbound_mutex);
+//
+//	//outbound
+//	//ExAcquireFastMutex(&g_outbound_mutex);
+//
+//	outbound->ulSize = g_outbound_data.ulSize;
+//	outbound->ulCount = g_outbound_data.ulCount;
+//
+//	//RtlZeroMemory(&g_outbound_data, sizeof(g_outbound_data));
+//	//ExReleaseFastMutex(&g_outbound_mutex);
+//}
 
 struct Z_ETH_HEADER
 {
@@ -121,11 +129,6 @@ typedef TCP_HDR tcp_header_t;
 typedef IPV4_HEADER ipv4_header_t;
 typedef Z_ETH_HEADER eth_header_t;
 
-namespace
-{
-	ULONG g_dwCurrentBufferSize;
-}
-
 enum OptionKind:BYTE {OptionKind_EndOfOptions = 0x0, OptionKind_NoOption = 0x01, OptionKind_Timestamp = 0x08};
 
 BYTE get_tcp_option_size(BYTE* buffer)
@@ -150,20 +153,22 @@ DWORD read_tcp_timestamp(BYTE* buffer)
 	return RtlUlongByteSwap(dwTimeStamp);
 }
 
-void read_tcp_data(BYTE* buffer, DWORD offset /*padding + last option*/, DWORD data_size /*size to read as packet content*/)
+void read_tcp_data(BYTE* buffer, DWORD offset /*padding + last option*/, DWORD data_size /*size to read as packet content*/, BYTE* pOutBuffer)
 {
 	if (data_size > 0)
 	{
 		buffer += offset;
 
-		UNREFERENCED_PARAMETER(data_size);
+		if (data_size <= 2000 - 4 - 4 - 2)
+		{
+			UNREFERENCED_PARAMETER(data_size);
 
-		BYTE* data = (BYTE*)buffer;
-		ASSERT(data);
+			RtlCopyMemory(pOutBuffer, buffer, data_size);
+		}
 	}
 }
 
-void read_tcp_info(BYTE* buffer, tcp_header_t* pTcpHeader, WORD data_size)
+void read_tcp_info(BYTE* buffer, tcp_header_t* pTcpHeader, WORD data_size, BYTE* pOutBuffer)
 {
 	//1. OPTIONS
 	ULONG tcp_header_bytes = pTcpHeader->th_len << 2;
@@ -178,7 +183,7 @@ void read_tcp_info(BYTE* buffer, tcp_header_t* pTcpHeader, WORD data_size)
 
 	if (options_size == 0) {
 		buffer += tcp_header_bytes;
-		read_tcp_data(buffer, 0, data_size);
+		read_tcp_data(buffer, 0, data_size, pOutBuffer);
 		return;
 	} else {
 		buffer += sizeof(tcp_header_t);
@@ -223,19 +228,20 @@ void read_tcp_info(BYTE* buffer, tcp_header_t* pTcpHeader, WORD data_size)
 
 	//end of options may not exist!!!
 	if (bytes_advanced == options_size) {
-		read_tcp_data(buffer, 0, data_size);
+		read_tcp_data(buffer, 0, data_size, pOutBuffer);
 	} else if (option_kind == OptionKind_EndOfOptions) {
 		//the end option byte
 		++bytes_advanced;
 
+		//or I could have simply used tcp_header + pTcpHeader->th_len << 2
 		DWORD modulo = bytes_advanced % sizeof(DWORD);
 		DWORD padding_size = (modulo ? sizeof(DWORD) - modulo : 0ul);
 
-		read_tcp_data(buffer, padding_size, data_size);
+		read_tcp_data(buffer, padding_size, data_size, pOutBuffer);
 	}
 }
 
-void read_tcp_header(BYTE* buffer, WORD offset, WORD total_ip_length)
+void read_tcp_header(BYTE* buffer, WORD offset, WORD total_ip_length, BYTE* pOutBuffer)
 {
 	tcp_header_t* pTcpHeader = (tcp_header_t*)buffer;
 
@@ -245,11 +251,12 @@ void read_tcp_header(BYTE* buffer, WORD offset, WORD total_ip_length)
 	WORD tcp_size = total_ip_length - offset;
 	//WORD data_and_options_size = tcp_size - (pTcpHeader->th_len << 2);
 	WORD data_size = tcp_size - (pTcpHeader->th_len << 2);
+	RtlCopyMemory(pOutBuffer, &data_size, sizeof(WORD));
 
-	read_tcp_info(buffer, pTcpHeader, data_size);
+	read_tcp_info(buffer, pTcpHeader, data_size, pOutBuffer + 2);
 }
 
-void read_ip_header(BYTE* buffer)
+void read_ip_header(BYTE* buffer, BYTE* pOutBuffer)
 {
 	ipv4_header_t* pIpHeader = (ipv4_header_t*)buffer;
 	ASSERT(pIpHeader);
@@ -269,11 +276,14 @@ void read_ip_header(BYTE* buffer)
 		buffer += offset;
 		total_length = RtlUshortByteSwap(pIpHeader->TotalLength);
 
-		read_tcp_header(buffer, offset, total_length);
+		RtlCopyMemory(pOutBuffer, &pIpHeader->SourceAddress, 4);
+		RtlCopyMemory(pOutBuffer + 4, &pIpHeader->DestinationAddress, 4);
+
+		read_tcp_header(buffer, offset, total_length, pOutBuffer + 8);
 	}
 }
 
-void read_ethernet_header(BYTE* buffer)
+void read_ethernet_header(BYTE* buffer, void* pOutBuffer)
 {
 	eth_header_t* pEthHeader = (eth_header_t*)buffer;
 
@@ -282,7 +292,7 @@ void read_ethernet_header(BYTE* buffer)
 		//DbgPrint("eth type = ipv4 = 0x%x\n", pEthHeader->type);
 
 		buffer += sizeof(eth_header_t);
-		read_ip_header(buffer);
+		read_ip_header(buffer, (BYTE*)pOutBuffer);
 	}
 
 	else
@@ -291,7 +301,7 @@ void read_ethernet_header(BYTE* buffer)
 	}
 }
 
-void read_eth_header(NET_BUFFER* net_buffer, ULONG buffer_size)
+void read_eth_header(NET_BUFFER* net_buffer, ULONG buffer_size, void* pOutBuffer)
 {
 	/*eth_header_t* pEthHeader = (eth_header_t*)NdisGetDataBuffer(buffer, sizeof(eth_header_t), NULL, 1, 0);
 	if (pEthHeader) {} else {
@@ -303,7 +313,7 @@ void read_eth_header(NET_BUFFER* net_buffer, ULONG buffer_size)
 
 	BYTE* buffer = (BYTE*)NdisGetDataBuffer(net_buffer, buffer_size, NULL, 1, 0);
 	if (buffer) {
-		read_ethernet_header(buffer);
+		read_ethernet_header(buffer, pOutBuffer);
 	} else {
 		//then perhaps it's not contiguous...
 
@@ -311,7 +321,7 @@ void read_eth_header(NET_BUFFER* net_buffer, ULONG buffer_size)
 
 		buffer = (BYTE*)NdisGetDataBuffer(net_buffer, buffer_size, alloc_mem, 1, 0);
 		if (buffer) {
-			read_ethernet_header(buffer);
+			read_ethernet_header(buffer, pOutBuffer);
 		} else {
 			DbgPrint("could not retrieve mac header: should have allocated storage in NdisGetDataBuffer!\n");
 		}
@@ -322,7 +332,7 @@ void read_eth_header(NET_BUFFER* net_buffer, ULONG buffer_size)
 	}
 }
 
-ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
+ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists, void* pOutBuffer)
 {
 	ULONG total_size = 0;
 
@@ -331,10 +341,9 @@ ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 	while (buffer) {
 
 		ULONG buffer_size = NET_BUFFER_DATA_LENGTH(buffer);
-		g_dwCurrentBufferSize = buffer_size;
 		//DbgPrint("buffer size: %u = 0x%x\n", buffer_size, buffer_size);
 
-		read_eth_header(buffer, buffer_size);
+		read_eth_header(buffer, buffer_size, pOutBuffer);
 
 		//I'll assume there are is no total size of buffer size >= 2^32 bytes
 		total_size += buffer_size;
@@ -345,7 +354,7 @@ ULONG process_buffers(PNET_BUFFER_LIST NetBufferLists)
 	return total_size;
 }
 
-ULONG process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size)
+ULONG process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size, void* pOutBuffer)
 {
 	int count = 0;
 	NET_BUFFER_LIST* buffer_list = NetBufferLists;
@@ -354,7 +363,7 @@ ULONG process_buffer_list(PNET_BUFFER_LIST NetBufferLists, ULONG& total_size)
 
 	while (buffer_list) {
 		//operations
-		total_size += process_buffers(buffer_list);
+		total_size += process_buffers(buffer_list, pOutBuffer);
 
 		buffer_list = NET_BUFFER_LIST_NEXT_NBL(buffer_list);
 
@@ -372,10 +381,14 @@ void push_buffers_info_lists_inbound(PNET_BUFFER_LIST net_buffer_lists)
 
 	//if (is_tcp && (is_ipv4 || is_ipv6))
 	{
-		ULONG total_size = 0;
-		ULONG count = process_buffer_list(net_buffer_lists, total_size);
+		if (ExTryToAcquireFastMutex(&g_inbound_mutex)) {
+			ULONG total_size = 0;
+			/*ULONG count = */ process_buffer_list(net_buffer_lists, total_size, g_pInboundData);
 
-		add_io_data(count, total_size, /*inbound*/ true);
+			ExReleaseFastMutex(&g_inbound_mutex);
+		}
+
+		//add_io_data(count, total_size, /*inbound*/ true);
 	}
 }
 
@@ -387,10 +400,16 @@ void push_buffers_info_lists_outbound(PNET_BUFFER_LIST net_buffer_lists)
 
 	//if (trueis_tcp && (is_ipv4 || is_ipv6))
 	{
-		ULONG total_size = 0;
-		ULONG count = process_buffer_list(net_buffer_lists, total_size);
+		if (ExTryToAcquireFastMutex(&g_outbound_mutex)) {
+			ULONG total_size = 0;
+			/*ULONG count = */ process_buffer_list(net_buffer_lists, total_size, g_pOutboundData);
 
-		UNREFERENCED_PARAMETER(count);
-		add_io_data(count, total_size, /*inbound*/ false);
+			ExReleaseFastMutex(&g_outbound_mutex);
+		}
+
+		/*UNREFERENCED_PARAMETER(count);
+		UNREFERENCED_PARAMETER(total_size);*/
+		
+		//add_io_data(count, total_size, /*inbound*/ false);
 	}
 }

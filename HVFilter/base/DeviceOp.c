@@ -13,6 +13,8 @@ extern PDEVICE_OBJECT OsrDataDeviceObject;
 extern PDEVICE_OBJECT OsrCommDeviceObject;
 extern LONG OsrRequestID;
 
+
+
 //
 // OsrCommCreate
 //
@@ -369,8 +371,6 @@ NTSTATUS OsrCommClose(PDEVICE_OBJECT DeviceObject, PIRP Irp)
 //  complete the data request (if it finds a matching entry).
 //
 
-static PacketInfo old_packet_info[2] = {0};
-
 NTSTATUS ProcessResponse(PIRP Irp)
 
 {
@@ -388,7 +388,6 @@ NTSTATUS ProcessResponse(PIRP Irp)
     (POSR_COMM_DATA_DEVICE_EXTENSION) OsrDataDeviceObject->DeviceExtension;
 //  POSR_COMM_CONTROL_DEVICE_EXTENSION controlExt = (POSR_COMM_CONTROL_DEVICE_EXTENSION) OsrCommDeviceObject->DeviceExtension;
   //UCHAR* next_addr = NULL;
-  PacketInfo packets[2];
 
   DbgPrint("ProcessResponse: Entered. \n");
 
@@ -474,7 +473,7 @@ NTSTATUS ProcessResponse(PIRP Irp)
       irpSp = IoGetCurrentIrpStackLocation(dataRequest->Irp);
       
       if (response->ResponseBufferLength < irpSp->Parameters.Read.Length ||
-		  response->ResponseBufferLength < sizeof(PacketInfo) << 1) {
+		  response->ResponseBufferLength < 2000 * 2) {
         
 		  ExReleaseFastMutex(queueLock);
 
@@ -489,34 +488,25 @@ NTSTATUS ProcessResponse(PIRP Irp)
         
       }
 
-	  //retrieve the new packet info
-	  retrieve_io_data(&packets[0], &packets[1]);
-	  //new - old = delta
-	  packets[0].ulCount -= old_packet_info[0].ulCount;
-	  packets[0].ulSize -= old_packet_info[0].ulSize;
-
-	  packets[1].ulCount -= old_packet_info[1].ulCount;
-	  packets[1].ulSize -= old_packet_info[1].ulSize;
-
-	  //old = new
-	  old_packet_info[0] = packets[0];
-	  old_packet_info[1] = packets[1];
-
+	  
+	  ExAcquireFastMutex(&g_inbound_mutex);
+	  ExAcquireFastMutex(&g_outbound_mutex);
 	  //next_addr = ((unsigned char*)requestBuffer) + sizeof(ulCount);
       //
       // We run this in a try/except to protect against bogus pointers, the usual
       //
       __try { 
-
-        //RtlCopyMemory(requestBuffer, &ulCount, sizeof(ulCount));
-		//RtlCopyMemory((PVOID)next_addr, &ulSize, sizeof(ulSize));
-		  RtlCopyMemory(requestBuffer, packets, sizeof(PacketInfo) << 1);
+		  RtlCopyMemory(requestBuffer, g_pInboundData, 2000);
+		  RtlCopyMemory((BYTE*)requestBuffer + 2000, g_pOutboundData, 2000);
 
       } __except (EXCEPTION_EXECUTE_HANDLER) {
 
         status = GetExceptionCode();
 
       }
+
+	  ExReleaseFastMutex(&g_inbound_mutex);
+	  ExReleaseFastMutex(&g_outbound_mutex);
 
       dataRequest->Irp->IoStatus.Status = status;
 
