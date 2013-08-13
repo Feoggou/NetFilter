@@ -135,9 +135,11 @@ void DataDeviceThread::OnStart()
 			WORD inbound_size = 0;
 			memcpy(&inbound_size, data + 8, 2);
 
-			of << "inbound source: " << inbound_source[0] << '.' << inbound_source[1] << '.' << inbound_source[2] << '.' << inbound_source[3] << std::endl;
-			of << "inbound destination: " << inbound_destination[0] << '.' << inbound_destination[1] << '.' <<
-				inbound_destination[2] << '.' << inbound_destination[3] << std::endl;
+			of << "inbound source: " << (ULONG)inbound_source[0] << '.' << (ULONG)inbound_source[1] << '.'
+				<< (ULONG)inbound_source[2] << '.' << (ULONG)inbound_source[3] << std::endl;
+
+			of << "inbound destination: " << (ULONG)inbound_destination[0] << '.' << (ULONG)inbound_destination[1] << '.' <<
+				(ULONG)inbound_destination[2] << '.' << (ULONG)inbound_destination[3] << std::endl;
 			of << "inbound data size: " << inbound_size << std::endl;
 
 			if (inbound_size > 0) {
@@ -157,9 +159,11 @@ void DataDeviceThread::OnStart()
 			WORD outbound_size = 0;
 			memcpy(&outbound_size, data + 8, 2);
 
-			of << "outbound source: " << outbound_source[0] << '.' << outbound_source[1] << '.' << outbound_source[2] << '.' << outbound_source[3] << std::endl;
-			of << "outbound destination: " << outbound_destination[0] << '.' << outbound_destination[1] << '.' <<
-				outbound_destination[2] << '.' << outbound_destination[3] << std::endl;
+			of << "outbound source: " << (ULONG)outbound_source[0] << '.' << (ULONG)outbound_source[1] << '.' <<
+				(ULONG)outbound_source[2] << '.' << (ULONG)outbound_source[3] << std::endl;
+
+			of << "outbound destination: " << (ULONG)outbound_destination[0] << '.' << (ULONG)outbound_destination[1] << '.' <<
+				(ULONG)outbound_destination[2] << '.' << (ULONG)outbound_destination[3] << std::endl;
 			of << "outbound data size: " << outbound_size << std::endl;
 
 			if (outbound_size > 0) {
